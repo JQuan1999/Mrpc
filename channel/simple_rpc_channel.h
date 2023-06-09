@@ -1,13 +1,14 @@
 #ifndef _MRPC_SIMPLE_CHANNEL_H_
 #define _MRPC_SIMPLE_CHANNEL_H_
 
+#include<atomic>
 #include <google/protobuf/service.h>
 #include<google/protobuf/descriptor.h>
 #include<google/protobuf/message.h>
 
 #include<mrpc/channel/rpc_channel.h>
 #include<mrpc/client/mrpc_client.h>
-#include<mrpc/common/common.h>
+#include<mrpc/common/logger.h>
 #include<mrpc/controller/rpc_controller.h>
 
 namespace mrpc{
@@ -35,14 +36,14 @@ public:
 
 public:
     void WaitDone(RpcController* crt);
-    void DoneCallBack(google::protobuf::Closure* done, RpcController::RpcControllerPtr ptr);
+    void DoneCallBack(google::protobuf::Closure* done, RpcControllerPtr ptr);
 
 private:
     tcp::endpoint _remote_endpoint;
     RpcClientPtr _client_ptr;
     std::string _address;
     uint32_t _port;
-    uint32_t _wait_count; // Todo用原子变量
+    std::atomic<uint32_t> _wait_count;
     bool _resolve_success;
 };
 

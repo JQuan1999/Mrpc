@@ -2,7 +2,7 @@
 #define _MRPC_FUNCTION_TRACER_H_
 
 #define ENABLE_FUNCTION_TRACE
-#include<mrpc/common/common.h>
+#include<mrpc/common/logger.h>
 
 namespace mrpc
 {

@@ -5,13 +5,13 @@
 #include<string>
 #include<atomic>
 
-#include<mrpc/server/rpc_request.h>
 #include<mrpc/common/end_point.h>
 #include<mrpc/common/rpc_byte_stream.h>
 #include<mrpc/proto/rpc_header.h>
 
 namespace mrpc
 {
+class RpcRequest;
 class RpcServerStream;
 typedef std::shared_ptr<RpcServerStream> RpcServerStreamPtr;
 
@@ -24,17 +24,21 @@ public:
 
     ~RpcServerStream();
 
+    void SendResponse(ReadBufferPtr& readbuf);
+
+    void PutItem(ReadBufferPtr& readbuf);
+
+    bool GetItem();
+
+    void StartSend();
+
+    void OnWrite(const boost::system::error_code& ec, size_t bytes);
+
     void StartReceive();
 
     void OnReadHeader(const boost::system::error_code& ec, size_t bytes);
 
-    void OnReadBody(const boost::system::error_code& ec, size_t bytes);
-
-    void StartSend();
-
-    void OnWriteHeader(const boost::system::error_code& ec, size_t bytes);
-
-    void OnWriteBody(const boost::system::error_code& ec, size_t bytes);
+    void OnReadBody(const boost::system::error_code& ec, size_t bytes);    
 
     void ClearReceiveEnv();
 
@@ -44,20 +48,18 @@ public:
 
     void SetCloseCallback(const CloseCallback& callback);
 
-private:
-    std::atomic<int> _receive_token;
-    int _receive_free;
-    int _receive_lock;
-    
+private: 
     int32_t _receive_bytes;
     ::mrpc::RpcHeader _header;
     Buffer _receive_data;
     ReadBufferPtr _readbuf_ptr;
     
-    std::atomic<int> _send_token;
-    int _send_free;
-    int _send_lock;
-    int32_t _send_bytes;
+    int _send_bytes;
+    const void* _send_data;
+    ReadBufferPtr _sendbuf_ptr;
+
+    std::deque<ReadBufferPtr> _send_buf_queue;
+    std::mutex _send_mutex;
 
     ReceiveCallBack _receive_callback;
     CloseCallback _close_callback;

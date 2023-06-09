@@ -64,8 +64,7 @@ void RpcServer::OnAccept(const RpcServerStreamPtr& stream)
 void RpcServer::OnReceive(const RpcServerStreamPtr& stream, RpcRequest request)
 { 
     // 开始解析request
-    request.Parse(_service_pool);
-
+    request.Parse(stream, _service_pool);
 }
 
 void OnClose(const RpcServerStreamPtr& stream)

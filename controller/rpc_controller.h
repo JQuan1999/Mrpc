@@ -1,15 +1,18 @@
 #ifndef _MRPC_CONTROLLER_H_
 #define _MRPC_CONTROLLER_H_
 #include<google/protobuf/service.h>
+#include<google/protobuf/message.h>
 #include<string.h>
-#include<deque>
+#include<stack>
 #include<mutex>
 #include<atomic>
 #include<condition_variable>
 #include<boost/asio.hpp>
 
-#include<mrpc/common/common.h>
+#include<mrpc/common/logger.h>
+#include<mrpc/common/buffer.h>
 #include<mrpc/common/end_point.h>
+#include<mrpc/server/rpc_server_stream.h>
 
 namespace mrpc{
 
@@ -23,6 +26,7 @@ class RpcController
 public:
     typedef std::function<void(RpcControllerPtr)> callback;
     RpcController();
+
     ~RpcController();
     // Client-side methods ---------------------------------------------
     // These calls may be made from the client side only.  Their results
@@ -75,11 +79,14 @@ public:
 
     // client-side method
     void SetMethodName(const std::string method_name);
+
     const std::string& GetMethodName();
+    
     void SetServiceName(const std::string service_name);
+    
     const std::string& GetServiceName();
     
-    void Done(std::string msg, bool is_failed = false);
+    void Done(std::string reason, bool failed);
     
     void PushDoneCallBack(callback func);
     
@@ -95,18 +102,36 @@ public:
     
     void SetRemoteEndPoint(const tcp::endpoint&);
 
-    void SetSequenceId(uint64_t);
+    void SetSendMessage(const ReadBufferPtr& sendbuf);
 
-    void SetRequestMessage(std::string);
+    ReadBufferPtr& GetSendMessage();
     
     const tcp::endpoint GetRemoteEndPoint();
 
-    std::string GetRequestMessage();
+    void SetReceiveMessage(ReadBufferPtr sendbuf);
+
+    ReadBufferPtr& GetReceiveMessage();
+
+    void SetSuccess();
+
     // server side
+    void SetSeverStream(const RpcServerStreamPtr& server_stream);
+
+    RpcServerStreamPtr GetSeverStream();
+
+    void SetRequest(google::protobuf::Message* request);
+
+    google::protobuf::Message* GetRequest();
+
+    void SetResponse(google::protobuf::Message* response);
+
+    google::protobuf::Message* GetResponse();
 
     // common
     bool IsDone();
+
     void SetSequenceId(uint64_t);
+    
     uint64_t GetSequenceId();
 
 private:
@@ -116,11 +141,16 @@ private:
     std::atomic<bool> _done; // 是否完成
     bool _is_sync; // 是否同步
     bool _is_signal; // 是否唤醒
-    std::deque<callback> _callback_queue; // 回调函数队列
+    std::stack<callback> _callback_queue; // 回调函数队列
     std::mutex _mutex;
     std::condition_variable _cond;
-    std::string _request_message;
+    ReadBufferPtr _send_buf;
+    ReadBufferPtr _receive_buf;
+
     // server
+    RpcServerStreamPtr _server_stream;
+    google::protobuf::Message* _response;
+    google::protobuf::Message* _request;
 
     // common
     uint64_t _sequence_id;

@@ -16,52 +16,46 @@ typedef std::shared_ptr<ThreadGroup> ThreadGroupPtr;
 
 typedef std::function<void()> ThreadFunc;
 
-class ThreadGroup: public boost::noncopyable{
-public:
-    struct ThreadParam{
-        int id;
-        ThreadFunc init_func;
-        ThreadFunc end_func;
-        IoContext& ioc;
-        ThreadParam(int p_id, ThreadFunc p_init_func, ThreadFunc p_end_func, IoContext& p_ioc)
-            : id(p_id)
-            , init_func(p_init_func)
-            , end_func(p_end_func)
-            , ioc(p_ioc)
-            {}
-        ~ThreadParam(){}
-    };
+struct ThreadParam
+{
+    int id; // 线程id
+    ThreadFunc init_func; // 线程初始化函数
+    ThreadFunc end_func; // 线程结束函数
+    IoContext& ioc;
+    ThreadParam(int p_id, ThreadFunc p_init_func, ThreadFunc p_end_func, IoContext& p_ioc)
+        : id(p_id)
+        , init_func(p_init_func)
+        , end_func(p_end_func)
+        , ioc(p_ioc)
+        {}
+    ~ThreadParam(){}
+};
 
+class ThreadGroup
+{
+public:
     ThreadGroup(int thread_num = 2, const std::string& name = "", ThreadFunc init_func = nullptr, ThreadFunc end_func = nullptr);
     ~ThreadGroup();
     void Start();
+
     void Stop();
 
-    void post(ThreadFunc task){
-        _ioc.post(task);
-    }
+    void Post(ThreadFunc task);
 
-    void post(google::protobuf::Closure* handle){
-        ThreadFunc task = std::bind(&ThreadGroup::_callback_helper, handle);
-        _ioc.post(task);
-    }
+    void Post(google::protobuf::Closure* handle);
 
-    void dispatch(ThreadFunc post){
-        _ioc.dispatch(post);
-    }
+    void Dispatch(ThreadFunc post);
 
-    void dispatch(google::protobuf::Closure* handle){
-        ThreadFunc task = std::bind(&ThreadGroup::_callback_helper, handle);
-        _ioc.dispatch(task);
-    }
+    void Dispatch(google::protobuf::Closure* handle);
 
     IoContext& GetService();
 
 private:
+    ThreadGroup(const ThreadGroup&);
+    ThreadGroup& operator=(const ThreadGroup&);
+
     // 将google::protobuf::Closure*绑定为ioc可调用的函数
-    static void _callback_helper(google::protobuf::Closure* task){
-        task->Run();
-    }
+    static void _callback_helper(google::protobuf::Closure* task);
 
     static void _thread_run(ThreadParam param);
     

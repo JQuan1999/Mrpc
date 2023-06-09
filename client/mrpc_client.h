@@ -15,7 +15,8 @@
 
 namespace mrpc{
 
-struct RpcClientOptions{
+struct RpcClientOptions
+{
     int work_thread_num; // 工作线程数目
     int callback_thread_num; // 回调函数线程数目
 
@@ -27,7 +28,7 @@ struct RpcClientOptions{
 
     RpcClientOptions()
         : work_thread_num(4)
-        , callback_thread_num(2)
+        , callback_thread_num(1)
         , keep_alive_time(-1)
         , connect_timeout(-1)
         , no_delay(true)
@@ -49,12 +50,12 @@ public:
     void Stop();
     void CallMethod(const google::protobuf::Message* request,
                     google::protobuf::Message* response,
-                    const RpcControllerPtr& crt);
+                    RpcController* crt);
     uint64_t GenerateSequenceId();
 
 private:
     RpcClient(const RpcClient&);
-    void operator=(const RpcClient&);
+    RpcClient& operator=(const RpcClient&);
 
     RpcClientStreamPtr FindOrCreateStream(const tcp::endpoint& endpoint);
     void DoneCallBack(google::protobuf::Message* response, const RpcControllerPtr& crt);

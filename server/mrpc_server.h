@@ -10,6 +10,7 @@
 #include<mrpc/common/end_point.h>
 #include<mrpc/common/thread_group.h>
 #include<mrpc/server/listener.h>
+#include<mrpc/server/rpc_request.h>
 #include<mrpc/server/service_pool.h>
 
 namespace mrpc{

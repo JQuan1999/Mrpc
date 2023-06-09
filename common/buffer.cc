@@ -8,14 +8,14 @@ Buffer::Buffer(int factor_size)
 {
     _capacity = (BUFFER_UNIT << factor_size);
         _size = 0;
-        shared_buf_ptr = std::shared_ptr<char[]>(new char[_capacity+1], 
+        shared_buf_ptr = std::shared_ptr<char[]>(new char[_capacity], 
                     [](char* data){
                         delete[] data;
                         data = nullptr;
                     }
         );
     _data = shared_buf_ptr.get();
-    memset(_data, 0, _capacity+1);
+    memset(_data, 0, _capacity);
 }
 
 Buffer::Buffer(const Buffer& buf)
@@ -39,12 +39,26 @@ char* Buffer::GetData()
 
 char* Buffer::GetHeader()
 {
+    if(_size >= _capacity)
+    {
+        LOG(FATAL, "GetHeader(): offset:%d is over data capacity:%d", _size, _capacity);
+        return nullptr;
+    }
     return _data + _size;
 }
 
-void Buffer::SetSize(int size)
+bool Buffer::SetSize(int size)
 {
-    _size = size;
+    if(size > _capacity)
+    {
+        LOG(ERROR, "SetSize(): size:%d is over data capacity:%d", size, _capacity);
+        return false;
+    }
+    else
+    {
+        _size = size;
+        return true;
+    }
 }
 
 int Buffer::GetSize()
@@ -52,36 +66,48 @@ int Buffer::GetSize()
     return _size;
 }
 
-void Buffer::Forward(int bytes)
+bool Buffer::Forward(int bytes)
 {
-    _size += bytes;
-    if(_size > _capacity){
-        std::cout<<"_size: "<<_size<<" is over _capacity: "<<_capacity<<", have truncted to _capacity"<<std::endl;
-        _size = _capacity;
+    if(bytes + _size > _capacity)
+    {
+        LOG(ERROR, "Forward(): offset:%d + forward bytes:%d will over capacity", _size, bytes);
+        return false;
+    }
+    else
+    {
+        _size += bytes;
+        return true;
     }
 }
 
-void Buffer::Back(int bytes)
+bool Buffer::Back(int bytes)
 {
-    _size -= bytes;
-    if(_size < 0){
-        std::cout<<"_size must be greater than 0"<<std::endl;
-        _size = 0;
+    if(_size < bytes)
+    {
+        LOG(ERROR, "Forward(): Back bytes:%d is over size", bytes);
+        return false;
+    }
+    else
+    {
+        _size -= bytes;
+        return true;
     }
 }
 
-void Buffer::SetCapacity(int cap)
+bool Buffer::SetCapacity(int cap)
 {
     if(cap > _capacity)
     {
-        std::cout<<"new cap must less than old capacity"<<std::endl;
-        return;
+        LOG(ERROR, "SetCapacity(): new capacity:%d should be less than old capacity:%d", cap, _capacity);
+        return false;
     }
     _capacity = cap;
     if(_size > _capacity)
     {
+        LOG(ERROR, "SetCapacity(): new capacity:%d is less than offset:%d offset will be clipped:%d", cap, _size);
         _size = _capacity;
     }
+    return true;
 }
 
 int Buffer::GetCapacity()
@@ -94,10 +120,17 @@ int Buffer::GetSpace()
     return _capacity - _size;
 }
 
-std::ostream& operator<<(std::ostream& os, const Buffer& buf)
+std::ostream& operator<<(std::ostream& os, Buffer& buf)
 {
-    os.write(buf._data+buf._size, buf._capacity-buf._size);
-    return os;
+    if(buf.GetHeader() == nullptr || buf.GetSpace() == 0)
+    {
+        return os;
+    }
+    else
+    {
+        os.write(buf.GetHeader(), buf.GetSpace());
+        return os;
+    }
 }
 //----------------Buffer------------------------
 
@@ -118,12 +151,12 @@ ReadBuffer::~ReadBuffer()
 
 void ReadBuffer::Append(Buffer& buf)
 {
-    if(buf.GetCapacity() == 0)
+    if(buf.GetSpace() == 0)
     {
         return;
     }
     _buf_list.push_back(buf);
-    _total_bytes += buf.GetCapacity();
+    _total_bytes += buf.GetSpace();
     _cur_iter = _buf_list.begin();
 }
 
@@ -133,14 +166,15 @@ std::string ReadBuffer::ToString()
     ret.reserve(_total_bytes);
     for(auto iter = _buf_list.begin(); iter != _buf_list.end(); iter++)
     {
-        ret.append(iter->GetData(), iter->GetSize());
+        ret.append(iter->GetHeader(), iter->GetSpace());
     }
     return ret;
 }
 
 ReadBufferPtr ReadBuffer::Split(int bytes)
 {
-    if(bytes < 0 || bytes > _total_bytes){
+    if(bytes < 0 || bytes > _total_bytes)
+    {
         LOG(FATAL, "ReadBuffer::Split() split bytes:%d must >= 0 and <= _total_bytes", bytes);
         return nullptr;
     }
@@ -149,20 +183,22 @@ ReadBufferPtr ReadBuffer::Split(int bytes)
     {
         auto front = _buf_list.front();
         _buf_list.pop_front();
-        int capacity = front.GetCapacity();
-        if(capacity > bytes)
+        int space = front.GetSpace();
+        if(space > bytes)
         {
             Buffer split(front);
+            split.SetSize(0);
             split.SetCapacity(bytes); // 前半部分的容量为bytes
             front.Forward(bytes); // 后半部分的已读字节设置为bytes即偏移量为bytes
             sub->Append(split);
             _buf_list.push_front(front); // 后半部分重新加入队列首部
-            capacity = bytes;
-        }else
+            space = bytes;
+        }
+        else
         {
             sub->Append(front);
         }
-        bytes -= capacity;
+        bytes -= space;
     }
     return sub;
 }
@@ -173,7 +209,8 @@ bool ReadBuffer::Next(const void** data, int* size)
     {
         _last_bytes = 0;
         return false;
-    }else
+    }
+    else
     {
         *data = _cur_iter->GetHeader(); // 读取的指针
         *size = _cur_iter->GetSpace(); // 可读的大小
@@ -202,7 +239,7 @@ void ReadBuffer::BackUp(int count)
     _read_bytes -= count;
 }
 
-// 跳过指定数量的字节
+
 bool ReadBuffer::Skip(int count)
 {
     if(count < 0)
@@ -272,9 +309,82 @@ std::string WriteBuffer::ToString()
     ret.reserve(_total_bytes);
     for(auto iter = _buf_list.begin(); iter != _buf_list.end(); iter++)
     {
-        ret.append(iter->GetData(), iter->GetSize());
+        ret.append(iter->GetHeader(), iter->GetSize());
     }
     return ret;
+}
+
+int64_t WriteBuffer::Reserve(int bytes)
+{
+    if(bytes < 0)
+    {
+        LOG(FATAL, "Reserve(): bytes must greater than 0");
+        return -1;
+    }
+    void* data;
+    int size;
+    int head = ByteCount();
+    while(bytes > 0)
+    {
+        if(!Next(&data, &size))
+        {
+            return -1;
+        }
+        if(size > bytes)
+        {
+            BackUp(size - bytes);
+            size = bytes;
+        }
+        bytes -= size;
+    }
+    return head;
+}
+
+void WriteBuffer::SetData(int head, const char* data, int bytes)
+{
+    if(head < 0 || bytes < 0 || data == nullptr)
+    {
+        LOG(FATAL, "head and bytes may be negative value or data may be nullptr");
+        return;
+    }
+    if(head + bytes > _write_bytes)
+    {
+        LOG(FATAL, "head:%d + bytes:%d > total write bytes:%d", head, bytes, _write_bytes);
+        return;
+    }
+    // 找到head的起始位置
+    auto iter = _buf_list.begin();
+    int offset = 0;
+    while(head > 0)
+    {
+        if(iter == _buf_list.end())
+        {
+            LOG(FATAL, "iter = buf_list.end()");
+        }
+        int count = iter->GetSize(); // 已写入的字节数
+        if(count > head)
+        {
+            offset = count - head;
+            count = head;
+        }
+        head -= count;
+        ++iter;
+    }
+
+    // 在iter的offset处写入bytes的data数据
+    while(bytes > 0)
+    {
+        if(iter == _buf_list.end())
+        {
+            LOG(FATAL, "iter = buf_list.end()");
+        }
+        int write_bytes = iter->GetSpace(); // 当前buffer可写入的字节数
+        write_bytes = std::min(write_bytes, bytes); // 可写入的字节数
+        strncpy(iter->GetData()+offset, data, write_bytes); // offset只会在第一次执行时不为0
+        bytes -= write_bytes;
+        offset = 0;
+        ++iter;
+    }
 }
 
 bool WriteBuffer::Next(void** data, int* size)

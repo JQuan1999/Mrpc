@@ -37,6 +37,7 @@ void RpcController::StartCancel()
 void RpcController::SetFailed(const std::string& reason)
 {
     _reason = reason;
+    _failed = true;
 }
 
 bool RpcController::IsCanceled() const
@@ -86,14 +87,24 @@ void RpcController::SetRemoteEndPoint(const boost::asio::ip::tcp::endpoint& endp
     _remote_endpoint = endpoint;
 }
 
-void RpcController::SetRequestMessage(std::string msg)
+void RpcController::SetSendMessage(const ReadBufferPtr& sendbuf)
 {
-    _request_message = msg;
+    _send_buf = sendbuf;
 }
 
-std::string RpcController::GetRequestMessage()
+ReadBufferPtr& RpcController::GetSendMessage()
 {
-    return _request_message;
+    return _send_buf;
+}
+
+void RpcController::SetReceiveMessage(ReadBufferPtr receive_buf)
+{
+    _receive_buf = receive_buf;
+}
+
+ReadBufferPtr& RpcController::GetReceiveMessage()
+{
+    return _receive_buf;
 }
 
 const tcp::endpoint RpcController::GetRemoteEndPoint()
@@ -132,7 +143,7 @@ void RpcController::PushDoneCallBack(callback func)
         LOG(ERROR, "PushDoneCallBack(): callback func is null");
         return;
     }
-    _callback_queue.push_back(func);
+    _callback_queue.push(func);
 }
 
 void RpcController::SetSequenceId(uint64_t id)
@@ -145,21 +156,51 @@ uint64_t RpcController::GetSequenceId()
     return _sequence_id;
 }
 
-void RpcController::Done(std::string msg, bool is_failed = false)
+void RpcController::Done(std::string reason, bool failed)
 {
     // Done只会被调用一次 已经done直接返回
     if(IsDone())
     {
         return;
     }
-    _reason = msg;
+    _reason = reason;
+    _failed = failed;
     _done.store(true);
-    _failed = is_failed;
     while(!_callback_queue.empty()){
-        auto func = _callback_queue.front();
+        auto func = _callback_queue.top();
         func(shared_from_this());
-        _callback_queue.pop_front();
+        _callback_queue.pop();
     }
+}
+
+void RpcController::SetSeverStream(const RpcServerStreamPtr& server_stream)
+{
+    _server_stream = server_stream;
+}
+
+RpcServerStreamPtr RpcController::GetSeverStream()
+{
+    return _server_stream;
+}
+
+void RpcController::SetRequest(google::protobuf::Message* request)
+{
+    _request = request;
+}
+
+google::protobuf::Message* RpcController::GetRequest()
+{
+    return _request;
+}
+
+void RpcController::SetResponse(google::protobuf::Message* response)
+{
+    _response = response;
+}
+
+google::protobuf::Message*RpcController::GetResponse()
+{
+    return _response;
 }
 
 bool RpcController::IsDone()

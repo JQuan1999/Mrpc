@@ -50,24 +50,26 @@ public:
         return true;
     }
 
-    ServiceBoard* GetService(const std::string& name)
+    ServiceBoard* GetServiceBoard(const std::string& name)
     {
         if(_service_board.count(name))
         {
             return _service_board[name];
-        }else{
+        }
+        else
+        {
             return nullptr;
         }
     }
 
-    const google::protobuf::MethodDescriptor* GetMethodDescriptor(const std::string& service_name, const std::string& method_name)
+    MethodBorad* GetMethodBoard(const std::string& service_name, const std::string& method_name)
     {
-        ServiceBoard* svc_board = GetService(service_name);
+        ServiceBoard* svc_board = GetServiceBoard(service_name);
         if(svc_board == nullptr)
         {
             return nullptr;
         }
-        return svc_board->GetMethod(method_name);
+        return svc_board->GetMethodBoard(method_name);
     }
 
 private:
@@ -133,12 +135,14 @@ public:
         return _svc_descriptor->name();
     }
 
-    const google::protobuf::MethodDescriptor* GetMethod(const std::string& name)
+    MethodBorad* GetMethodBoard(const std::string& name)
     {
         if(_method_borad.count(name))
         {
-            return _method_borad[name]->GetDescriptor();
-        }else{
+            return _method_borad[name];
+        }
+        else
+        {
             return nullptr;
         }
     }

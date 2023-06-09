@@ -22,13 +22,16 @@ public:
         , _socket(_ioc)
         , _remote_endpoint(endpoint)
         , _local_endpoint(endpoint)
+        , _receiving(false)
+        , _sending(false)
         , _receive_factor_size(REVEIVE_FACTOR_SIZE)
         , _send_factor_size(SEND_FACTOR_SIZE)
+        , _status(SOCKET_CLOSED)
     {
-        _status.store(SOCKET_CLOSED);
+
     }
 
-    ~RpcByteStream()
+    virtual ~RpcByteStream()
     {
         _socket.close();
     }
@@ -46,8 +49,29 @@ public:
         }
     }
 
-    // uesd by server
+    bool IsClosed()
+    {
+        if(_status.load() == SOCKET_CLOSED)
+        {
+            return true;
+        }else
+        {
+            return false;
+        }
+    }
 
+    bool IsConnected()
+    {
+        if(_status.load() == SOCKET_CONNECTED)
+        {
+            return true;
+        }else
+        {
+            return false;
+        }
+    }
+
+    // uesd by server
     void SetConnected()
     {
         // Todo 设置no_delay
@@ -95,11 +119,63 @@ protected:
         return _status.load() == SOCKET_CONNECTED;
     }
 
+    bool TrySend()
+    {
+        std::lock_guard<std::mutex> lock(_sending_mutex);
+        if(_sending.load() == true)
+        {
+            return false;
+        }
+        else
+        {
+            _sending.store(false);
+            return true;
+        }
+    }
+
+    void FreeSendingFlag()
+    {
+        std::lock_guard<std::mutex> lock(_sending_mutex);
+        if(_sending.load() == false)
+        {
+            LOG(FATAL, "when FreeSendingFlag is called sending must be true");
+        }
+        else
+        {
+            _sending.store(false);
+        }
+    }
+    
+    bool TryReceive()
+    {
+        std::lock_guard<std::mutex> lock(_receiving_mutex);
+        if(_receiving.load() == true)
+        {
+            return false;
+        }
+        else
+        {
+            _receiving.store(true);
+        }
+    }
+
+    void FreeReceivingFlag()
+    {
+        std::lock_guard<std::mutex> lock(_receiving_mutex);
+        if(_receiving.load() == false)
+        {
+            LOG(FATAL, "when FreeSendingFlag is called sending must be true");
+        }
+        else
+        {
+            _receiving.store(false);
+        }
+    }
+
     // 由子类实现
     virtual void OnReadHeader(const boost::system::error_code& ec, size_t bytes) = 0;
     virtual void OnReadBody(const boost::system::error_code& ec, size_t bytes) = 0;
-    virtual void OnWriteHeader(const boost::system::error_code& ec, size_t bytes) = 0;
-    virtual void OnWriteBody(const boost::system::error_code& ec, size_t bytes) = 0;
+    virtual void OnWrite(const boost::system::error_code& ec, size_t bytes) = 0;
 
     // 异步读数据
     void AsyncReadHeader(char* data, size_t size)
@@ -116,17 +192,10 @@ protected:
                                 std::placeholders::_1, std::placeholders::_2));
     }
 
-    void AysncWriteHeader(char* data, size_t size)
+    void AsyncWrite(char* data, size_t size)
     {
         boost::asio::async_write(_socket, boost::asio::buffer(data, size), 
-                                std::bind(&RpcByteStream::OnWriteHeader, shared_from_this(), 
-                                std::placeholders::_1, std::placeholders::_2));
-    }
-
-    void AysncWriteBody(char* data, size_t size)
-    {
-        boost::asio::async_write(_socket, boost::asio::buffer(data, size), 
-                                std::bind(&RpcByteStream::OnWriteBody, shared_from_this(), 
+                                std::bind(&RpcByteStream::OnWrite, shared_from_this(), 
                                 std::placeholders::_1, std::placeholders::_2));
     }
 
@@ -147,11 +216,18 @@ private:
     }
 
 protected:
+    std::mutex _sending_mutex;
+    std::atomic<bool> _sending;
+
+    std::atomic<bool> _receiving;
+    std::mutex _receiving_mutex;
+
     tcp::endpoint _local_endpoint;
     tcp::endpoint _remote_endpoint;
     IoContext& _ioc;
     int _receive_factor_size;
     int _send_factor_size;
+
 private:
     enum SOCKET_STATUS{
         SOCKET_INIT = 0,

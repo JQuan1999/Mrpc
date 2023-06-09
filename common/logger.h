@@ -20,7 +20,9 @@ enum LogLevel{
     LOG_LEVEL_TRACE = 4,
     LOG_LEVEL_DEBUG = 5,
 };
-class Logger{
+
+class Logger
+{
 public:
     static Logger* GetLogHandler();
     static void SetLogLevel(LogLevel level);

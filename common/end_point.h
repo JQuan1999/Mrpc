@@ -8,7 +8,8 @@
 
 using namespace boost::asio::ip;
 
-namespace mrpc{
+namespace mrpc
+{
 
 typedef boost::asio::io_context IoContext;
 

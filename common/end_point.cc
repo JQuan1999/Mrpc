@@ -18,7 +18,9 @@ bool ResovleAddress(IoContext& ioc, const std::string& address, uint32_t port, t
     {
         *endpoint = iter->endpoint();
         return true;
-    }else{
+    }
+    else
+    {
         LOG(ERROR, "ResovleAddress(): resolve address [%s: %d] failed: %s", address.c_str(), port, ec.message().c_str());
         return false;
     }

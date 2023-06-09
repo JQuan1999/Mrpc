@@ -11,7 +11,8 @@ ThreadGroup::ThreadGroup(int thread_num, const std::string& name, ThreadFunc ini
     , _end_func(end_func)
     , _is_running(false)
 {
-    if(name.size() == 0){
+    if(name.size() == 0)
+    {
         char tmp[20];
         sprintf(tmp, "%p", this);
         _name = tmp;
@@ -19,22 +20,25 @@ ThreadGroup::ThreadGroup(int thread_num, const std::string& name, ThreadFunc ini
     Start();
 }
 
-ThreadGroup::~ThreadGroup(){
+ThreadGroup::~ThreadGroup()
+{
     Stop();
 }
 
 
 void ThreadGroup::Start()
 {
-    if(_is_running){
+    if(_is_running)
+    {
         return;
     }
     _is_running = true;
-    for(int i = 0; i < _thread_num; i++){
+    for(int i = 0; i < _thread_num; i++)
+    {
         ThreadParam param(i+1, _init_func, _end_func, _ioc);
         _threads.emplace_back(&ThreadGroup::_thread_run, param);
     }
-    LOG(INFO, "Start(): thread group [%s] started, thread num = %d", _name.c_str(), _thread_num); // 检查每个线程是否都创建成功
+    LOG(INFO, "Start(): thread group [%s] started, thread num = %d", _name.c_str(), _thread_num);
 }
 
 void ThreadGroup::Stop()
@@ -42,23 +46,53 @@ void ThreadGroup::Stop()
     if(!_is_running) return;
     _is_running = false;
     _ioc.stop();
-    for(int i = 0; i < _thread_num; i++){
+    for(int i = 0; i < _thread_num; i++)
+    {
         _threads[i].join();
     }
     LOG(INFO, "Stop(): thread group [%s] stopped", _name.c_str());
 }
 
+void ThreadGroup::Post(ThreadFunc task)
+{
+    _ioc.post(task);
+}
+
+void ThreadGroup::Post(google::protobuf::Closure* handle)
+{
+    ThreadFunc task = std::bind(&ThreadGroup::_callback_helper, handle);
+    _ioc.post(task);
+}
+
+void ThreadGroup::Dispatch(ThreadFunc task)
+{
+    _ioc.dispatch(task);
+}
+
+void ThreadGroup::Dispatch(google::protobuf::Closure* handle)
+{
+    ThreadFunc task = std::bind(&ThreadGroup::_callback_helper, handle);
+    _ioc.dispatch(task);
+}
+
+void ThreadGroup::_callback_helper(google::protobuf::Closure* task)
+{
+    task->Run();
+}
+
 void ThreadGroup::_thread_run(ThreadParam param)
 {
     // init
-    if(param.init_func){
+    if(param.init_func)
+    {
         param.init_func();
     }
     LOG(INFO, "_thread_run(): thread id: [%d] is started successfully", param.id);
     // run asio
     param.ioc.run();
     // destory
-    if(param.end_func){
+    if(param.end_func)
+    {
         param.end_func();
     }
 }

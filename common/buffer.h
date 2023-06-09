@@ -25,15 +25,15 @@ public:
 
     char* GetHeader();
 
-    void SetSize(int size);
+    bool SetSize(int size);
 
     int GetSize();
 
-    void Forward(int bytes);
+    bool Forward(int bytes);
 
-    void Back(int bytes);
+    bool Back(int bytes);
 
-    void SetCapacity(int cap);
+    bool SetCapacity(int cap);
 
     int GetCapacity();
 
@@ -87,6 +87,8 @@ public:
     ~WriteBuffer();
     void SwapOut(ReadBuffer* readbuf);
     std::string ToString();
+    int64_t Reserve(int bytes);
+    void SetData(int head, const char* data, int bytes);
     // 继承ZeroCopyOutputStream的方法--------
     // 返回一段可写的连续内存及大小 内存buffer大小为*size，*data指向了这段内存
     bool Next(void** data, int* size); 
