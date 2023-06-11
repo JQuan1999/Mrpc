@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package TestBuffer;
+
+message TestData{
+    optional int32 id = 1;
+    optional string name = 2;
+    message Record{
+        optional bytes text = 11;
+        optional int32 text_len = 12;
+    };
+    optional Record record = 3;
+};

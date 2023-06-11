@@ -29,7 +29,7 @@ message RpcMeta{
     // response part----------------
 
     // set true if the call is failed
-    required bool failed = 201;
+    optional bool failed = 201;
     
     // the error reason if the call is failed
     optional string reason = 202;

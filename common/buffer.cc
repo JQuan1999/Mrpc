@@ -4,6 +4,16 @@ namespace mrpc
 {
 
 //----------------Buffer------------------------
+/*默认构造函数*/
+Buffer::Buffer()
+    : _capacity(0)
+    , _size(0)
+    , _data(nullptr)
+    , shared_buf_ptr(nullptr)
+{
+
+}
+
 Buffer::Buffer(int factor_size)
 {
     _capacity = (BUFFER_UNIT << factor_size);
@@ -70,7 +80,7 @@ bool Buffer::Forward(int bytes)
 {
     if(bytes + _size > _capacity)
     {
-        LOG(ERROR, "Forward(): offset:%d + forward bytes:%d will over capacity", _size, bytes);
+        LOG(ERROR, "Forward(): offset:%d + forward bytes:%d will over capacity:%d", _size, bytes, _capacity);
         return false;
     }
     else
@@ -84,7 +94,7 @@ bool Buffer::Back(int bytes)
 {
     if(_size < bytes)
     {
-        LOG(ERROR, "Forward(): Back bytes:%d is over size", bytes);
+        LOG(ERROR, "Forward(): Back bytes:%d is over size:%d", bytes, _size);
         return false;
     }
     else
@@ -144,9 +154,16 @@ ReadBuffer::ReadBuffer()
     _cur_iter = _buf_list.begin();
 }
 
-ReadBuffer::~ReadBuffer()
+void ReadBuffer::Clear()
 {
-
+    while(!_buf_list.empty())
+    {
+        _buf_list.pop_front();
+    }
+    _cur_iter = _buf_list.begin();
+    _read_bytes = 0;
+    _last_bytes = 0;
+    _total_bytes = 0;
 }
 
 void ReadBuffer::Append(Buffer& buf)
@@ -162,7 +179,7 @@ void ReadBuffer::Append(Buffer& buf)
 
 std::string ReadBuffer::ToString()
 {
-    std::string ret;
+    std::string ret = "";
     ret.reserve(_total_bytes);
     for(auto iter = _buf_list.begin(); iter != _buf_list.end(); iter++)
     {
@@ -175,8 +192,8 @@ ReadBufferPtr ReadBuffer::Split(int bytes)
 {
     if(bytes < 0 || bytes > _total_bytes)
     {
-        LOG(FATAL, "ReadBuffer::Split() split bytes:%d must >= 0 and <= _total_bytes", bytes);
-        return nullptr;
+        LOG(ERROR, "ReadBuffer::Split() split bytes:%d must >= 0 and <= _total_bytes", bytes);
+        return ReadBufferPtr();
     }
     ReadBufferPtr sub = std::make_shared<ReadBuffer>();
     while(bytes > 0)
@@ -187,8 +204,7 @@ ReadBufferPtr ReadBuffer::Split(int bytes)
         if(space > bytes)
         {
             Buffer split(front);
-            split.SetSize(0);
-            split.SetCapacity(bytes); // 前半部分的容量为bytes
+            split.SetCapacity(split.GetSize()+bytes); // 前半部分的容量为bytes = 位移size + bytes
             front.Forward(bytes); // 后半部分的已读字节设置为bytes即偏移量为bytes
             sub->Append(split);
             _buf_list.push_front(front); // 后半部分重新加入队列首部
@@ -199,8 +215,20 @@ ReadBufferPtr ReadBuffer::Split(int bytes)
             sub->Append(front);
         }
         bytes -= space;
+        _total_bytes -= space;
     }
+    _cur_iter = _buf_list.begin(); // 更新iter
     return sub;
+}
+
+int ReadBuffer::GetTotalBytes()
+{
+    return _total_bytes;
+}
+
+const std::deque<Buffer>::iterator ReadBuffer::GetCurrentIter()
+{
+    return _cur_iter;
 }
 
 bool ReadBuffer::Next(const void** data, int* size)
@@ -214,6 +242,7 @@ bool ReadBuffer::Next(const void** data, int* size)
     {
         *data = _cur_iter->GetHeader(); // 读取的指针
         *size = _cur_iter->GetSpace(); // 可读的大小
+        _cur_iter->Forward(*size);
         _cur_iter++;
         _last_bytes = *size;
         _read_bytes += _last_bytes;
@@ -288,6 +317,11 @@ WriteBuffer::WriteBuffer()
     _cur_iter = _buf_list.rend();
 }
 
+const std::deque<Buffer>::reverse_iterator WriteBuffer::GetCurrentIter()
+{
+    return _cur_iter;
+}
+
 void WriteBuffer::SwapOut(ReadBuffer* readbuf)
 {
     while(!_buf_list.empty())
@@ -309,7 +343,7 @@ std::string WriteBuffer::ToString()
     ret.reserve(_total_bytes);
     for(auto iter = _buf_list.begin(); iter != _buf_list.end(); iter++)
     {
-        ret.append(iter->GetHeader(), iter->GetSize());
+        ret.append(iter->GetData(), iter->GetSize());
     }
     return ret;
 }
@@ -318,7 +352,7 @@ int64_t WriteBuffer::Reserve(int bytes)
 {
     if(bytes < 0)
     {
-        LOG(FATAL, "Reserve(): bytes must greater than 0");
+        LOG(ERROR, "Reserve(): bytes must greater than 0");
         return -1;
     }
     void* data;
@@ -361,14 +395,17 @@ void WriteBuffer::SetData(int head, const char* data, int bytes)
         {
             LOG(FATAL, "iter = buf_list.end()");
         }
-        int count = iter->GetSize(); // 已写入的字节数
+        int count = iter->GetSize(); // block已写入的字节数
         if(count > head)
         {
-            offset = count - head;
-            count = head;
+            offset = head;
+            head = 0;
         }
-        head -= count;
-        ++iter;
+        else
+        {
+            head -= count;
+            ++iter;
+        }
     }
 
     // 在iter的offset处写入bytes的data数据
@@ -378,12 +415,20 @@ void WriteBuffer::SetData(int head, const char* data, int bytes)
         {
             LOG(FATAL, "iter = buf_list.end()");
         }
-        int write_bytes = iter->GetSpace(); // 当前buffer可写入的字节数
-        write_bytes = std::min(write_bytes, bytes); // 可写入的字节数
-        strncpy(iter->GetData()+offset, data, write_bytes); // offset只会在第一次执行时不为0
-        bytes -= write_bytes;
-        offset = 0;
-        ++iter;
+        int write_bytes = iter->GetCapacity() - offset; // [offset,capacity]为写入的区间
+        if(write_bytes > bytes)
+        {
+            memcpy(iter->GetData()+offset, data, bytes); // offset只会在第一次执行时可能不为0
+            bytes = 0;
+        }
+        else
+        {
+            memcpy(iter->GetData()+offset, data, write_bytes); // 全部写入
+            bytes -= write_bytes;
+            data += write_bytes;
+            ++iter;
+            offset = 0;
+        }
     }
 }
 

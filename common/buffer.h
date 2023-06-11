@@ -9,15 +9,19 @@
 namespace mrpc
 {
 #define BUFFER_UNIT 64
-#define BASE_FACTOR_SIZE 3
+#define BASE_FACTOR_SIZE 0
 #define MAX_FACTOR_SIZE 9
 
 class ReadBuffer;
 typedef std::shared_ptr<ReadBuffer> ReadBufferPtr;
 
+class WriteBuffer;
+typedef std::shared_ptr<WriteBuffer> WriteBufferPtr;
+
 class Buffer{
 
 public:
+    Buffer();
     Buffer(int factor_size);
     Buffer(const Buffer& buf);
     ~Buffer();
@@ -48,26 +52,29 @@ private:
     int _size;
 };
 
+
 class ReadBuffer: public google::protobuf::io::ZeroCopyInputStream
 {
 public:
     ReadBuffer();
-    ~ReadBuffer();
+    virtual ~ReadBuffer(){};
+    void Clear();
     void Append(Buffer& buf);
     std::string ToString();
     ReadBufferPtr Split(int bytes);
-
+    int GetTotalBytes();
+    const std::deque<Buffer>::iterator GetCurrentIter();
     // 继承ZeroCopyOutputStream的方法--------
     // 返回一段可读的连续内存及大小 内存buffer大小为*size，*data指向了这段内存
-    bool Next(const void** data, int* size); 
+    virtual bool Next(const void** data, int* size); 
     // The last "count" bytes of the last buffer returned by Next() will be
     // pushed back into the stream.
     // 针向后移动count字节 归还上次Next()执行的多余字节
-    void BackUp(int count);
+    virtual void BackUp(int count);
     // 跳过count字节
-    bool Skip(int count);
+    virtual bool Skip(int count);
     // 读取的字节总数
-    int64_t ByteCount() const;
+    virtual int64_t ByteCount() const;
     // --------继承ZeroCopyOutputStream的方法
 
     friend std::ostream& operator<<(std::ostream& os, ReadBuffer& buf);
@@ -84,18 +91,24 @@ class WriteBuffer: public google::protobuf::io::ZeroCopyOutputStream
 {
 public:
     WriteBuffer();
-    ~WriteBuffer();
+    virtual ~WriteBuffer(){};
+    
+    const std::deque<Buffer>::reverse_iterator GetCurrentIter();
+
     void SwapOut(ReadBuffer* readbuf);
+
     std::string ToString();
+    
     int64_t Reserve(int bytes);
+    
     void SetData(int head, const char* data, int bytes);
     // 继承ZeroCopyOutputStream的方法--------
     // 返回一段可写的连续内存及大小 内存buffer大小为*size，*data指向了这段内存
-    bool Next(void** data, int* size); 
+    virtual bool Next(void** data, int* size); 
     //归还Next申请的部分内存
-    void BackUp(int count);
+    virtual void BackUp(int count);
     // 写入的字节总数
-    int64_t ByteCount() const;
+    virtual int64_t ByteCount() const;
     // --------继承ZeroCopyOutputStream的方法
 
     bool Extend(); // 分配新的buffer
