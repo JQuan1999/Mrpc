@@ -1,6 +1,8 @@
 syntax = "proto2";
 
-package TestBuffer;
+package TestProto;
+
+option cc_generic_services  = true;
 
 message TestData{
     optional int32 id = 1;
@@ -11,3 +13,27 @@ message TestData{
     };
     optional Record record = 3;
 };
+
+message LoginRequest{
+    optional string count = 1;
+    optional string password = 2;
+};
+
+message LoginResponse{
+    optional string result = 1;
+    optional bool failed = 2;
+};
+
+message AddRequest{
+    optional int32 a = 1;
+    optional int32 b = 2;
+}
+
+message AddResponse{
+    optional int32 result = 1;
+}
+
+service UserService{
+    rpc Login(LoginRequest) returns(LoginResponse);
+    rpc Add(AddRequest) returns(AddResponse);
+}

@@ -442,8 +442,8 @@ public:
     {
 
     }
-    TestBuffer::TestData_Record record;
-    TestBuffer::TestData test_data;
+    TestProto::TestData_Record record;
+    TestProto::TestData test_data;
 };
 
 
@@ -482,7 +482,7 @@ TEST_F(BufferSerializeTest, serialize)
 
     mrpc::RpcHeader parser_header;
     mrpc::RpcMeta parser_meta;
-    TestBuffer::TestData parser_test_data;
+    TestProto::TestData parser_test_data;
     const void* data;
     int total_size = 0;
     int size;
@@ -519,7 +519,7 @@ TEST_F(BufferSerializeTest, serialize)
     EXPECT_EQ(parser_test_data.ParseFromZeroCopyStream(r_ptr.get()), true);
     EXPECT_EQ(parser_test_data.id(), test_data.id());
     EXPECT_EQ(parser_test_data.name(), test_data.name());
-    TestBuffer::TestData_Record parser_record = parser_test_data.record();
+    TestProto::TestData_Record parser_record = parser_test_data.record();
     EXPECT_EQ(parser_record.text_len(), record.text_len());
     EXPECT_EQ(parser_record.text(), record.text());
 }

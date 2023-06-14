@@ -1,5 +1,5 @@
-SRC = test_buffer.cc ./test_buffer.pb.cc ../common/buffer.cc ../common/logger.cc ../proto/rpc_meta.pb.cc
-TARGET = test_buffer
+SRC = test_service_pool.cc test_buffer.pb.cc ../common/logger.cc
+TARGET = test_service_pool
 CXX_FLAGS = -g -W -Wall -O0
 INCLUDE = -I/home/ubuntu/Desktop
 LIB_FLAGS = -lgtest -lprotobuf -lpthread

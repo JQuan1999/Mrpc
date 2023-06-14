@@ -29,6 +29,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/service.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 #define PROTOBUF_INTERNAL_EXPORT_protobuf_test_5fbuffer_2eproto 
@@ -38,32 +39,48 @@ namespace protobuf_test_5fbuffer_2eproto {
 struct TableStruct {
   static const ::google::protobuf::internal::ParseTableField entries[];
   static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-  static const ::google::protobuf::internal::ParseTable schema[2];
+  static const ::google::protobuf::internal::ParseTable schema[6];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
   static const ::google::protobuf::internal::SerializationTable serialization_table[];
   static const ::google::protobuf::uint32 offsets[];
 };
 void AddDescriptors();
 }  // namespace protobuf_test_5fbuffer_2eproto
-namespace TestBuffer {
+namespace TestProto {
+class AddRequest;
+class AddRequestDefaultTypeInternal;
+extern AddRequestDefaultTypeInternal _AddRequest_default_instance_;
+class AddResponse;
+class AddResponseDefaultTypeInternal;
+extern AddResponseDefaultTypeInternal _AddResponse_default_instance_;
+class LoginRequest;
+class LoginRequestDefaultTypeInternal;
+extern LoginRequestDefaultTypeInternal _LoginRequest_default_instance_;
+class LoginResponse;
+class LoginResponseDefaultTypeInternal;
+extern LoginResponseDefaultTypeInternal _LoginResponse_default_instance_;
 class TestData;
 class TestDataDefaultTypeInternal;
 extern TestDataDefaultTypeInternal _TestData_default_instance_;
 class TestData_Record;
 class TestData_RecordDefaultTypeInternal;
 extern TestData_RecordDefaultTypeInternal _TestData_Record_default_instance_;
-}  // namespace TestBuffer
+}  // namespace TestProto
 namespace google {
 namespace protobuf {
-template<> ::TestBuffer::TestData* Arena::CreateMaybeMessage<::TestBuffer::TestData>(Arena*);
-template<> ::TestBuffer::TestData_Record* Arena::CreateMaybeMessage<::TestBuffer::TestData_Record>(Arena*);
+template<> ::TestProto::AddRequest* Arena::CreateMaybeMessage<::TestProto::AddRequest>(Arena*);
+template<> ::TestProto::AddResponse* Arena::CreateMaybeMessage<::TestProto::AddResponse>(Arena*);
+template<> ::TestProto::LoginRequest* Arena::CreateMaybeMessage<::TestProto::LoginRequest>(Arena*);
+template<> ::TestProto::LoginResponse* Arena::CreateMaybeMessage<::TestProto::LoginResponse>(Arena*);
+template<> ::TestProto::TestData* Arena::CreateMaybeMessage<::TestProto::TestData>(Arena*);
+template<> ::TestProto::TestData_Record* Arena::CreateMaybeMessage<::TestProto::TestData_Record>(Arena*);
 }  // namespace protobuf
 }  // namespace google
-namespace TestBuffer {
+namespace TestProto {
 
 // ===================================================================
 
-class TestData_Record : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestBuffer.TestData.Record) */ {
+class TestData_Record : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.TestData.Record) */ {
  public:
   TestData_Record();
   virtual ~TestData_Record();
@@ -179,7 +196,7 @@ class TestData_Record : public ::google::protobuf::Message /* @@protoc_insertion
   ::google::protobuf::int32 text_len() const;
   void set_text_len(::google::protobuf::int32 value);
 
-  // @@protoc_insertion_point(class_scope:TestBuffer.TestData.Record)
+  // @@protoc_insertion_point(class_scope:TestProto.TestData.Record)
  private:
   void set_has_text();
   void clear_has_text();
@@ -195,7 +212,7 @@ class TestData_Record : public ::google::protobuf::Message /* @@protoc_insertion
 };
 // -------------------------------------------------------------------
 
-class TestData : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestBuffer.TestData) */ {
+class TestData : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.TestData) */ {
  public:
   TestData();
   virtual ~TestData();
@@ -306,17 +323,17 @@ class TestData : public ::google::protobuf::Message /* @@protoc_insertion_point(
   ::std::string* release_name();
   void set_allocated_name(::std::string* name);
 
-  // optional .TestBuffer.TestData.Record record = 3;
+  // optional .TestProto.TestData.Record record = 3;
   bool has_record() const;
   void clear_record();
   static const int kRecordFieldNumber = 3;
   private:
-  const ::TestBuffer::TestData_Record& _internal_record() const;
+  const ::TestProto::TestData_Record& _internal_record() const;
   public:
-  const ::TestBuffer::TestData_Record& record() const;
-  ::TestBuffer::TestData_Record* release_record();
-  ::TestBuffer::TestData_Record* mutable_record();
-  void set_allocated_record(::TestBuffer::TestData_Record* record);
+  const ::TestProto::TestData_Record& record() const;
+  ::TestProto::TestData_Record* release_record();
+  ::TestProto::TestData_Record* mutable_record();
+  void set_allocated_record(::TestProto::TestData_Record* record);
 
   // optional int32 id = 1;
   bool has_id() const;
@@ -325,7 +342,7 @@ class TestData : public ::google::protobuf::Message /* @@protoc_insertion_point(
   ::google::protobuf::int32 id() const;
   void set_id(::google::protobuf::int32 value);
 
-  // @@protoc_insertion_point(class_scope:TestBuffer.TestData)
+  // @@protoc_insertion_point(class_scope:TestProto.TestData)
  private:
   void set_has_id();
   void clear_has_id();
@@ -338,10 +355,587 @@ class TestData : public ::google::protobuf::Message /* @@protoc_insertion_point(
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   ::google::protobuf::internal::ArenaStringPtr name_;
-  ::TestBuffer::TestData_Record* record_;
+  ::TestProto::TestData_Record* record_;
   ::google::protobuf::int32 id_;
   friend struct ::protobuf_test_5fbuffer_2eproto::TableStruct;
 };
+// -------------------------------------------------------------------
+
+class LoginRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.LoginRequest) */ {
+ public:
+  LoginRequest();
+  virtual ~LoginRequest();
+
+  LoginRequest(const LoginRequest& from);
+
+  inline LoginRequest& operator=(const LoginRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  LoginRequest(LoginRequest&& from) noexcept
+    : LoginRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline LoginRequest& operator=(LoginRequest&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const LoginRequest& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const LoginRequest* internal_default_instance() {
+    return reinterpret_cast<const LoginRequest*>(
+               &_LoginRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    2;
+
+  void Swap(LoginRequest* other);
+  friend void swap(LoginRequest& a, LoginRequest& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline LoginRequest* New() const final {
+    return CreateMaybeMessage<LoginRequest>(NULL);
+  }
+
+  LoginRequest* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<LoginRequest>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const LoginRequest& from);
+  void MergeFrom(const LoginRequest& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(LoginRequest* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string count = 1;
+  bool has_count() const;
+  void clear_count();
+  static const int kCountFieldNumber = 1;
+  const ::std::string& count() const;
+  void set_count(const ::std::string& value);
+  #if LANG_CXX11
+  void set_count(::std::string&& value);
+  #endif
+  void set_count(const char* value);
+  void set_count(const char* value, size_t size);
+  ::std::string* mutable_count();
+  ::std::string* release_count();
+  void set_allocated_count(::std::string* count);
+
+  // optional string password = 2;
+  bool has_password() const;
+  void clear_password();
+  static const int kPasswordFieldNumber = 2;
+  const ::std::string& password() const;
+  void set_password(const ::std::string& value);
+  #if LANG_CXX11
+  void set_password(::std::string&& value);
+  #endif
+  void set_password(const char* value);
+  void set_password(const char* value, size_t size);
+  ::std::string* mutable_password();
+  ::std::string* release_password();
+  void set_allocated_password(::std::string* password);
+
+  // @@protoc_insertion_point(class_scope:TestProto.LoginRequest)
+ private:
+  void set_has_count();
+  void clear_has_count();
+  void set_has_password();
+  void clear_has_password();
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::HasBits<1> _has_bits_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  ::google::protobuf::internal::ArenaStringPtr count_;
+  ::google::protobuf::internal::ArenaStringPtr password_;
+  friend struct ::protobuf_test_5fbuffer_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class LoginResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.LoginResponse) */ {
+ public:
+  LoginResponse();
+  virtual ~LoginResponse();
+
+  LoginResponse(const LoginResponse& from);
+
+  inline LoginResponse& operator=(const LoginResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  LoginResponse(LoginResponse&& from) noexcept
+    : LoginResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline LoginResponse& operator=(LoginResponse&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const LoginResponse& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const LoginResponse* internal_default_instance() {
+    return reinterpret_cast<const LoginResponse*>(
+               &_LoginResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    3;
+
+  void Swap(LoginResponse* other);
+  friend void swap(LoginResponse& a, LoginResponse& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline LoginResponse* New() const final {
+    return CreateMaybeMessage<LoginResponse>(NULL);
+  }
+
+  LoginResponse* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<LoginResponse>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const LoginResponse& from);
+  void MergeFrom(const LoginResponse& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(LoginResponse* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string result = 1;
+  bool has_result() const;
+  void clear_result();
+  static const int kResultFieldNumber = 1;
+  const ::std::string& result() const;
+  void set_result(const ::std::string& value);
+  #if LANG_CXX11
+  void set_result(::std::string&& value);
+  #endif
+  void set_result(const char* value);
+  void set_result(const char* value, size_t size);
+  ::std::string* mutable_result();
+  ::std::string* release_result();
+  void set_allocated_result(::std::string* result);
+
+  // optional bool failed = 2;
+  bool has_failed() const;
+  void clear_failed();
+  static const int kFailedFieldNumber = 2;
+  bool failed() const;
+  void set_failed(bool value);
+
+  // @@protoc_insertion_point(class_scope:TestProto.LoginResponse)
+ private:
+  void set_has_result();
+  void clear_has_result();
+  void set_has_failed();
+  void clear_has_failed();
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::HasBits<1> _has_bits_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  ::google::protobuf::internal::ArenaStringPtr result_;
+  bool failed_;
+  friend struct ::protobuf_test_5fbuffer_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class AddRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.AddRequest) */ {
+ public:
+  AddRequest();
+  virtual ~AddRequest();
+
+  AddRequest(const AddRequest& from);
+
+  inline AddRequest& operator=(const AddRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  AddRequest(AddRequest&& from) noexcept
+    : AddRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline AddRequest& operator=(AddRequest&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AddRequest& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const AddRequest* internal_default_instance() {
+    return reinterpret_cast<const AddRequest*>(
+               &_AddRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  void Swap(AddRequest* other);
+  friend void swap(AddRequest& a, AddRequest& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline AddRequest* New() const final {
+    return CreateMaybeMessage<AddRequest>(NULL);
+  }
+
+  AddRequest* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<AddRequest>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const AddRequest& from);
+  void MergeFrom(const AddRequest& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(AddRequest* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional int32 a = 1;
+  bool has_a() const;
+  void clear_a();
+  static const int kAFieldNumber = 1;
+  ::google::protobuf::int32 a() const;
+  void set_a(::google::protobuf::int32 value);
+
+  // optional int32 b = 2;
+  bool has_b() const;
+  void clear_b();
+  static const int kBFieldNumber = 2;
+  ::google::protobuf::int32 b() const;
+  void set_b(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:TestProto.AddRequest)
+ private:
+  void set_has_a();
+  void clear_has_a();
+  void set_has_b();
+  void clear_has_b();
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::HasBits<1> _has_bits_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  ::google::protobuf::int32 a_;
+  ::google::protobuf::int32 b_;
+  friend struct ::protobuf_test_5fbuffer_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class AddResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:TestProto.AddResponse) */ {
+ public:
+  AddResponse();
+  virtual ~AddResponse();
+
+  AddResponse(const AddResponse& from);
+
+  inline AddResponse& operator=(const AddResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  AddResponse(AddResponse&& from) noexcept
+    : AddResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline AddResponse& operator=(AddResponse&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AddResponse& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const AddResponse* internal_default_instance() {
+    return reinterpret_cast<const AddResponse*>(
+               &_AddResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  void Swap(AddResponse* other);
+  friend void swap(AddResponse& a, AddResponse& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline AddResponse* New() const final {
+    return CreateMaybeMessage<AddResponse>(NULL);
+  }
+
+  AddResponse* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<AddResponse>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const AddResponse& from);
+  void MergeFrom(const AddResponse& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(AddResponse* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional int32 result = 1;
+  bool has_result() const;
+  void clear_result();
+  static const int kResultFieldNumber = 1;
+  ::google::protobuf::int32 result() const;
+  void set_result(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:TestProto.AddResponse)
+ private:
+  void set_has_result();
+  void clear_has_result();
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::HasBits<1> _has_bits_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  ::google::protobuf::int32 result_;
+  friend struct ::protobuf_test_5fbuffer_2eproto::TableStruct;
+};
+// ===================================================================
+
+class UserService_Stub;
+
+class UserService : public ::google::protobuf::Service {
+ protected:
+  // This class should be treated as an abstract interface.
+  inline UserService() {};
+ public:
+  virtual ~UserService();
+
+  typedef UserService_Stub Stub;
+
+  static const ::google::protobuf::ServiceDescriptor* descriptor();
+
+  virtual void Login(::google::protobuf::RpcController* controller,
+                       const ::TestProto::LoginRequest* request,
+                       ::TestProto::LoginResponse* response,
+                       ::google::protobuf::Closure* done);
+  virtual void Add(::google::protobuf::RpcController* controller,
+                       const ::TestProto::AddRequest* request,
+                       ::TestProto::AddResponse* response,
+                       ::google::protobuf::Closure* done);
+
+  // implements Service ----------------------------------------------
+
+  const ::google::protobuf::ServiceDescriptor* GetDescriptor();
+  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+                  ::google::protobuf::RpcController* controller,
+                  const ::google::protobuf::Message* request,
+                  ::google::protobuf::Message* response,
+                  ::google::protobuf::Closure* done);
+  const ::google::protobuf::Message& GetRequestPrototype(
+    const ::google::protobuf::MethodDescriptor* method) const;
+  const ::google::protobuf::Message& GetResponsePrototype(
+    const ::google::protobuf::MethodDescriptor* method) const;
+
+ private:
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(UserService);
+};
+
+class UserService_Stub : public UserService {
+ public:
+  UserService_Stub(::google::protobuf::RpcChannel* channel);
+  UserService_Stub(::google::protobuf::RpcChannel* channel,
+                   ::google::protobuf::Service::ChannelOwnership ownership);
+  ~UserService_Stub();
+
+  inline ::google::protobuf::RpcChannel* channel() { return channel_; }
+
+  // implements UserService ------------------------------------------
+
+  void Login(::google::protobuf::RpcController* controller,
+                       const ::TestProto::LoginRequest* request,
+                       ::TestProto::LoginResponse* response,
+                       ::google::protobuf::Closure* done);
+  void Add(::google::protobuf::RpcController* controller,
+                       const ::TestProto::AddRequest* request,
+                       ::TestProto::AddResponse* response,
+                       ::google::protobuf::Closure* done);
+ private:
+  ::google::protobuf::RpcChannel* channel_;
+  bool owns_channel_;
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(UserService_Stub);
+};
+
+
 // ===================================================================
 
 
@@ -368,41 +962,41 @@ inline void TestData_Record::clear_text() {
   clear_has_text();
 }
 inline const ::std::string& TestData_Record::text() const {
-  // @@protoc_insertion_point(field_get:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_get:TestProto.TestData.Record.text)
   return text_.GetNoArena();
 }
 inline void TestData_Record::set_text(const ::std::string& value) {
   set_has_text();
   text_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_set:TestProto.TestData.Record.text)
 }
 #if LANG_CXX11
 inline void TestData_Record::set_text(::std::string&& value) {
   set_has_text();
   text_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_set_rvalue:TestProto.TestData.Record.text)
 }
 #endif
 inline void TestData_Record::set_text(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_text();
   text_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_set_char:TestProto.TestData.Record.text)
 }
 inline void TestData_Record::set_text(const void* value, size_t size) {
   set_has_text();
   text_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_set_pointer:TestProto.TestData.Record.text)
 }
 inline ::std::string* TestData_Record::mutable_text() {
   set_has_text();
-  // @@protoc_insertion_point(field_mutable:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_mutable:TestProto.TestData.Record.text)
   return text_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* TestData_Record::release_text() {
-  // @@protoc_insertion_point(field_release:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_release:TestProto.TestData.Record.text)
   if (!has_text()) {
     return NULL;
   }
@@ -416,7 +1010,7 @@ inline void TestData_Record::set_allocated_text(::std::string* text) {
     clear_has_text();
   }
   text_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), text);
-  // @@protoc_insertion_point(field_set_allocated:TestBuffer.TestData.Record.text)
+  // @@protoc_insertion_point(field_set_allocated:TestProto.TestData.Record.text)
 }
 
 // optional int32 text_len = 12;
@@ -434,13 +1028,13 @@ inline void TestData_Record::clear_text_len() {
   clear_has_text_len();
 }
 inline ::google::protobuf::int32 TestData_Record::text_len() const {
-  // @@protoc_insertion_point(field_get:TestBuffer.TestData.Record.text_len)
+  // @@protoc_insertion_point(field_get:TestProto.TestData.Record.text_len)
   return text_len_;
 }
 inline void TestData_Record::set_text_len(::google::protobuf::int32 value) {
   set_has_text_len();
   text_len_ = value;
-  // @@protoc_insertion_point(field_set:TestBuffer.TestData.Record.text_len)
+  // @@protoc_insertion_point(field_set:TestProto.TestData.Record.text_len)
 }
 
 // -------------------------------------------------------------------
@@ -462,13 +1056,13 @@ inline void TestData::clear_id() {
   clear_has_id();
 }
 inline ::google::protobuf::int32 TestData::id() const {
-  // @@protoc_insertion_point(field_get:TestBuffer.TestData.id)
+  // @@protoc_insertion_point(field_get:TestProto.TestData.id)
   return id_;
 }
 inline void TestData::set_id(::google::protobuf::int32 value) {
   set_has_id();
   id_ = value;
-  // @@protoc_insertion_point(field_set:TestBuffer.TestData.id)
+  // @@protoc_insertion_point(field_set:TestProto.TestData.id)
 }
 
 // optional string name = 2;
@@ -486,41 +1080,41 @@ inline void TestData::clear_name() {
   clear_has_name();
 }
 inline const ::std::string& TestData::name() const {
-  // @@protoc_insertion_point(field_get:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_get:TestProto.TestData.name)
   return name_.GetNoArena();
 }
 inline void TestData::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_set:TestProto.TestData.name)
 }
 #if LANG_CXX11
 inline void TestData::set_name(::std::string&& value) {
   set_has_name();
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_set_rvalue:TestProto.TestData.name)
 }
 #endif
 inline void TestData::set_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_set_char:TestProto.TestData.name)
 }
 inline void TestData::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_set_pointer:TestProto.TestData.name)
 }
 inline ::std::string* TestData::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_mutable:TestProto.TestData.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* TestData::release_name() {
-  // @@protoc_insertion_point(field_release:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_release:TestProto.TestData.name)
   if (!has_name()) {
     return NULL;
   }
@@ -534,10 +1128,10 @@ inline void TestData::set_allocated_name(::std::string* name) {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:TestBuffer.TestData.name)
+  // @@protoc_insertion_point(field_set_allocated:TestProto.TestData.name)
 }
 
-// optional .TestBuffer.TestData.Record record = 3;
+// optional .TestProto.TestData.Record record = 3;
 inline bool TestData::has_record() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -551,32 +1145,32 @@ inline void TestData::clear_record() {
   if (record_ != NULL) record_->Clear();
   clear_has_record();
 }
-inline const ::TestBuffer::TestData_Record& TestData::_internal_record() const {
+inline const ::TestProto::TestData_Record& TestData::_internal_record() const {
   return *record_;
 }
-inline const ::TestBuffer::TestData_Record& TestData::record() const {
-  const ::TestBuffer::TestData_Record* p = record_;
-  // @@protoc_insertion_point(field_get:TestBuffer.TestData.record)
-  return p != NULL ? *p : *reinterpret_cast<const ::TestBuffer::TestData_Record*>(
-      &::TestBuffer::_TestData_Record_default_instance_);
+inline const ::TestProto::TestData_Record& TestData::record() const {
+  const ::TestProto::TestData_Record* p = record_;
+  // @@protoc_insertion_point(field_get:TestProto.TestData.record)
+  return p != NULL ? *p : *reinterpret_cast<const ::TestProto::TestData_Record*>(
+      &::TestProto::_TestData_Record_default_instance_);
 }
-inline ::TestBuffer::TestData_Record* TestData::release_record() {
-  // @@protoc_insertion_point(field_release:TestBuffer.TestData.record)
+inline ::TestProto::TestData_Record* TestData::release_record() {
+  // @@protoc_insertion_point(field_release:TestProto.TestData.record)
   clear_has_record();
-  ::TestBuffer::TestData_Record* temp = record_;
+  ::TestProto::TestData_Record* temp = record_;
   record_ = NULL;
   return temp;
 }
-inline ::TestBuffer::TestData_Record* TestData::mutable_record() {
+inline ::TestProto::TestData_Record* TestData::mutable_record() {
   set_has_record();
   if (record_ == NULL) {
-    auto* p = CreateMaybeMessage<::TestBuffer::TestData_Record>(GetArenaNoVirtual());
+    auto* p = CreateMaybeMessage<::TestProto::TestData_Record>(GetArenaNoVirtual());
     record_ = p;
   }
-  // @@protoc_insertion_point(field_mutable:TestBuffer.TestData.record)
+  // @@protoc_insertion_point(field_mutable:TestProto.TestData.record)
   return record_;
 }
-inline void TestData::set_allocated_record(::TestBuffer::TestData_Record* record) {
+inline void TestData::set_allocated_record(::TestProto::TestData_Record* record) {
   ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
   if (message_arena == NULL) {
     delete record_;
@@ -592,7 +1186,317 @@ inline void TestData::set_allocated_record(::TestBuffer::TestData_Record* record
     clear_has_record();
   }
   record_ = record;
-  // @@protoc_insertion_point(field_set_allocated:TestBuffer.TestData.record)
+  // @@protoc_insertion_point(field_set_allocated:TestProto.TestData.record)
+}
+
+// -------------------------------------------------------------------
+
+// LoginRequest
+
+// optional string count = 1;
+inline bool LoginRequest::has_count() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void LoginRequest::set_has_count() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void LoginRequest::clear_has_count() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void LoginRequest::clear_count() {
+  count_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_count();
+}
+inline const ::std::string& LoginRequest::count() const {
+  // @@protoc_insertion_point(field_get:TestProto.LoginRequest.count)
+  return count_.GetNoArena();
+}
+inline void LoginRequest::set_count(const ::std::string& value) {
+  set_has_count();
+  count_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:TestProto.LoginRequest.count)
+}
+#if LANG_CXX11
+inline void LoginRequest::set_count(::std::string&& value) {
+  set_has_count();
+  count_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:TestProto.LoginRequest.count)
+}
+#endif
+inline void LoginRequest::set_count(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  set_has_count();
+  count_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:TestProto.LoginRequest.count)
+}
+inline void LoginRequest::set_count(const char* value, size_t size) {
+  set_has_count();
+  count_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:TestProto.LoginRequest.count)
+}
+inline ::std::string* LoginRequest::mutable_count() {
+  set_has_count();
+  // @@protoc_insertion_point(field_mutable:TestProto.LoginRequest.count)
+  return count_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LoginRequest::release_count() {
+  // @@protoc_insertion_point(field_release:TestProto.LoginRequest.count)
+  if (!has_count()) {
+    return NULL;
+  }
+  clear_has_count();
+  return count_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LoginRequest::set_allocated_count(::std::string* count) {
+  if (count != NULL) {
+    set_has_count();
+  } else {
+    clear_has_count();
+  }
+  count_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), count);
+  // @@protoc_insertion_point(field_set_allocated:TestProto.LoginRequest.count)
+}
+
+// optional string password = 2;
+inline bool LoginRequest::has_password() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void LoginRequest::set_has_password() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void LoginRequest::clear_has_password() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void LoginRequest::clear_password() {
+  password_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_password();
+}
+inline const ::std::string& LoginRequest::password() const {
+  // @@protoc_insertion_point(field_get:TestProto.LoginRequest.password)
+  return password_.GetNoArena();
+}
+inline void LoginRequest::set_password(const ::std::string& value) {
+  set_has_password();
+  password_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:TestProto.LoginRequest.password)
+}
+#if LANG_CXX11
+inline void LoginRequest::set_password(::std::string&& value) {
+  set_has_password();
+  password_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:TestProto.LoginRequest.password)
+}
+#endif
+inline void LoginRequest::set_password(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  set_has_password();
+  password_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:TestProto.LoginRequest.password)
+}
+inline void LoginRequest::set_password(const char* value, size_t size) {
+  set_has_password();
+  password_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:TestProto.LoginRequest.password)
+}
+inline ::std::string* LoginRequest::mutable_password() {
+  set_has_password();
+  // @@protoc_insertion_point(field_mutable:TestProto.LoginRequest.password)
+  return password_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LoginRequest::release_password() {
+  // @@protoc_insertion_point(field_release:TestProto.LoginRequest.password)
+  if (!has_password()) {
+    return NULL;
+  }
+  clear_has_password();
+  return password_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LoginRequest::set_allocated_password(::std::string* password) {
+  if (password != NULL) {
+    set_has_password();
+  } else {
+    clear_has_password();
+  }
+  password_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), password);
+  // @@protoc_insertion_point(field_set_allocated:TestProto.LoginRequest.password)
+}
+
+// -------------------------------------------------------------------
+
+// LoginResponse
+
+// optional string result = 1;
+inline bool LoginResponse::has_result() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void LoginResponse::set_has_result() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void LoginResponse::clear_has_result() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void LoginResponse::clear_result() {
+  result_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_result();
+}
+inline const ::std::string& LoginResponse::result() const {
+  // @@protoc_insertion_point(field_get:TestProto.LoginResponse.result)
+  return result_.GetNoArena();
+}
+inline void LoginResponse::set_result(const ::std::string& value) {
+  set_has_result();
+  result_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:TestProto.LoginResponse.result)
+}
+#if LANG_CXX11
+inline void LoginResponse::set_result(::std::string&& value) {
+  set_has_result();
+  result_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:TestProto.LoginResponse.result)
+}
+#endif
+inline void LoginResponse::set_result(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  set_has_result();
+  result_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:TestProto.LoginResponse.result)
+}
+inline void LoginResponse::set_result(const char* value, size_t size) {
+  set_has_result();
+  result_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:TestProto.LoginResponse.result)
+}
+inline ::std::string* LoginResponse::mutable_result() {
+  set_has_result();
+  // @@protoc_insertion_point(field_mutable:TestProto.LoginResponse.result)
+  return result_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LoginResponse::release_result() {
+  // @@protoc_insertion_point(field_release:TestProto.LoginResponse.result)
+  if (!has_result()) {
+    return NULL;
+  }
+  clear_has_result();
+  return result_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LoginResponse::set_allocated_result(::std::string* result) {
+  if (result != NULL) {
+    set_has_result();
+  } else {
+    clear_has_result();
+  }
+  result_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), result);
+  // @@protoc_insertion_point(field_set_allocated:TestProto.LoginResponse.result)
+}
+
+// optional bool failed = 2;
+inline bool LoginResponse::has_failed() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void LoginResponse::set_has_failed() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void LoginResponse::clear_has_failed() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void LoginResponse::clear_failed() {
+  failed_ = false;
+  clear_has_failed();
+}
+inline bool LoginResponse::failed() const {
+  // @@protoc_insertion_point(field_get:TestProto.LoginResponse.failed)
+  return failed_;
+}
+inline void LoginResponse::set_failed(bool value) {
+  set_has_failed();
+  failed_ = value;
+  // @@protoc_insertion_point(field_set:TestProto.LoginResponse.failed)
+}
+
+// -------------------------------------------------------------------
+
+// AddRequest
+
+// optional int32 a = 1;
+inline bool AddRequest::has_a() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AddRequest::set_has_a() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AddRequest::clear_has_a() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AddRequest::clear_a() {
+  a_ = 0;
+  clear_has_a();
+}
+inline ::google::protobuf::int32 AddRequest::a() const {
+  // @@protoc_insertion_point(field_get:TestProto.AddRequest.a)
+  return a_;
+}
+inline void AddRequest::set_a(::google::protobuf::int32 value) {
+  set_has_a();
+  a_ = value;
+  // @@protoc_insertion_point(field_set:TestProto.AddRequest.a)
+}
+
+// optional int32 b = 2;
+inline bool AddRequest::has_b() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AddRequest::set_has_b() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AddRequest::clear_has_b() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void AddRequest::clear_b() {
+  b_ = 0;
+  clear_has_b();
+}
+inline ::google::protobuf::int32 AddRequest::b() const {
+  // @@protoc_insertion_point(field_get:TestProto.AddRequest.b)
+  return b_;
+}
+inline void AddRequest::set_b(::google::protobuf::int32 value) {
+  set_has_b();
+  b_ = value;
+  // @@protoc_insertion_point(field_set:TestProto.AddRequest.b)
+}
+
+// -------------------------------------------------------------------
+
+// AddResponse
+
+// optional int32 result = 1;
+inline bool AddResponse::has_result() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AddResponse::set_has_result() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AddResponse::clear_has_result() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AddResponse::clear_result() {
+  result_ = 0;
+  clear_has_result();
+}
+inline ::google::protobuf::int32 AddResponse::result() const {
+  // @@protoc_insertion_point(field_get:TestProto.AddResponse.result)
+  return result_;
+}
+inline void AddResponse::set_result(::google::protobuf::int32 value) {
+  set_has_result();
+  result_ = value;
+  // @@protoc_insertion_point(field_set:TestProto.AddResponse.result)
 }
 
 #ifdef __GNUC__
@@ -600,10 +1504,18 @@ inline void TestData::set_allocated_record(::TestBuffer::TestData_Record* record
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace TestBuffer
+}  // namespace TestProto
 
 // @@protoc_insertion_point(global_scope)
 
