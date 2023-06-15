@@ -6,6 +6,8 @@
 #include<set>
 #include<memory>
 #include<string>
+#include<signal.h>
+#include<unistd.h>
 
 #include<mrpc/common/end_point.h>
 #include<mrpc/common/thread_group.h>
@@ -34,12 +36,21 @@ typedef std::shared_ptr<RpcServer> RpcServerPtr;
 class RpcServer: public std::enable_shared_from_this<RpcServer>
 {
 public:
-    RpcServer(RpcServerOptions option, const tcp::endpoint& endpoint);
+    RpcServer(RpcServerOptions option = RpcServerOptions());
+
     ~RpcServer();
+    
     void Start(const tcp::endpoint& endpoint);
+    
     void Stop();
 
+    void Run();
+
+    bool RegisterService(google::protobuf::Service* service, bool ownship=true);
+
 private:
+    static void SignalHandler(int);
+
     void OnCreate(const RpcServerStreamPtr& stream);
 
     void OnAccept(const RpcServerStreamPtr& stream);
@@ -49,11 +60,12 @@ private:
     void OnClose(const RpcServerStreamPtr& stream);
 
 private:
+    static bool _quit;
     ListenerPtr _listener_ptr;
     ServicePoolPtr _service_pool;
     std::atomic<bool> _is_running;
     RpcServerOptions _option;
-    ThreadGroupPtr _io_service_pool; // io_service线程组
+    ThreadGroupPtr _io_service_group; // io_service线程组
     std::set<RpcServerStreamPtr> _stream_set; // server_stream集合
     std::mutex _stream_set_mutex;
 };

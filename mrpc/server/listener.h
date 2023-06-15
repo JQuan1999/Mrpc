@@ -23,6 +23,8 @@ public:
         : _ioc(ioc)
         , _endpoint(endpoint)
         , _acceptor(_ioc)
+        , _accept_callback(nullptr)
+        , _create_callback(nullptr)
     {
         _is_closed.store(true);
     }
@@ -46,31 +48,33 @@ public:
     {
         boost::system::error_code ec;
         _acceptor.open(_endpoint.protocol(), ec); // open acceptor using the specified protocol
-        if(ec){
-            LOG(ERROR, "StartListen(): open acceptor failed: %s: %s", EndPointToString(_endpoint), ec.message());
+        if(ec)
+        {
+            LOG(ERROR, "StartListen(): open acceptor failed: %s: %s", EndPointToString(_endpoint).c_str(), ec.message().c_str());
             return false;
         }
         
         _acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
         if(ec){
-            LOG(ERROR, "StartListen(): set acceptor option failed: %s: %s", EndPointToString(_endpoint), ec.message());
+            LOG(ERROR, "StartListen(): set acceptor option failed: %s: %s", EndPointToString(_endpoint).c_str(), ec.message().c_str());
             return false;
         }
 
         _acceptor.bind(_endpoint, ec);
         if(ec){
-            LOG(ERROR, "StartListen(): bind acceptor failed: %s: %s", EndPointToString(_endpoint), ec.message());
+            LOG(ERROR, "StartListen(): bind acceptor failed: %s: %s", EndPointToString(_endpoint).c_str(), ec.message().c_str());
             return false;
         }
 
         _acceptor.listen(4096, ec);
         if(ec){
-            LOG(ERROR, "StartListen(): listen acceptor failed: %s: %s", EndPointToString(_endpoint), ec.message());
+            LOG(ERROR, "StartListen(): listen acceptor failed: %s: %s", EndPointToString(_endpoint).c_str(), ec.message().c_str());
             return false;
         }
-        _is_closed.store(true); // 将_is_closed设为false 表示已经打开开始接受连接
-        LOG(INFO, "StartListen(): listen succeed: %s", EndPointToString(_endpoint));
+        _is_closed.store(false); // 将_is_closed设为false 表示已经打开开始接受连接
+        LOG(INFO, "StartListen(): listen succeed: %s", EndPointToString(_endpoint).c_str());
         AsyncAccpet();
+        return true;
     }
 
     void Stop()
@@ -82,13 +86,17 @@ public:
         boost::system::error_code ec;
         _acceptor.cancel(ec);
         _acceptor.close(ec);
-        LOG(INFO, "Stop(): listener stoped: %s", EndPointToString(_endpoint));
+        LOG(INFO, "Stop(): listener stoped: %s", EndPointToString(_endpoint).c_str());
     }
 
 private:
     void AsyncAccpet()
     {
         RpcServerStreamPtr stream = std::make_shared<RpcServerStream>(_ioc, _endpoint);
+        if(_create_callback)
+        {
+            _create_callback(stream);
+        }
         _acceptor.async_accept(stream->GetSocket(), std::bind(&Listener::OnAccept, shared_from_this(), 
                                 stream, std::placeholders::_1));
     }
@@ -103,13 +111,16 @@ private:
 
         if(ec)
         {
-            LOG(ERROR, "OnAccept(): async accpet error: %s", EndPointToString(_endpoint));
+            LOG(ERROR, "OnAccept(): async accpet error: %s", EndPointToString(_endpoint).c_str());
             Stop();
             return;
         }
         else
         {
-            _accept_callback(stream); // 调用server::OnAccept
+            if(_accept_callback)
+            {
+                _accept_callback(stream); // 调用server::OnAccept
+            }
             AsyncAccpet(); // 继续接收新连接
         }
     }

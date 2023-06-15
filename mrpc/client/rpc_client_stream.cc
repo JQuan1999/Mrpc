@@ -13,13 +13,8 @@ RpcClientStream::RpcClientStream(IoContext& ioc, const tcp::endpoint& endpoint)
 
 RpcClientStream::~RpcClientStream()
 {
-    // Need lock?
-    for(auto iter = _controller_map.begin(); iter != _controller_map.end(); iter++)
-    {
-        iter->second->Done("RpcClientStream destructed", true);
-    }
+    Close("rpc stream destructed");
 }
-
 
 void RpcClientStream::CallMethod(const RpcControllerPtr& crt)
 {
@@ -96,6 +91,16 @@ void RpcClientStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
         {
             AsyncWrite((char*)_send_data, _send_bytes); // 数据未发送完继续发送 _send_buf有多个数据块
         }
+    }
+}
+
+void RpcClientStream::OnClose(std::string reason)
+{
+    LOG(DEBUG, "OnClose(): Realease all wait rpc controller");
+    std::lock_guard<std::mutex> lock(_controller_map_mutex);
+    for(auto& p: _controller_map)
+    {
+        p.second->Done(reason, false);
     }
 }
 
@@ -194,30 +199,30 @@ void RpcClientStream::OnReceived()
     ReadBufferPtr message_buf = _readbuf_ptr;
     if(!meta.ParseFromZeroCopyStream(meta_buf.get()))
     {
-        LOG(ERROR, "OnReceived(): parse metabuf erorr");
+        LOG(ERROR, "OnReceived(): remote: [%s] parse metabuf erorr", EndPointToString(_remote_endpoint));
         return;
     }
     // 检查是否为request
     RpcMeta_Type type = meta.type();
     if(type != RpcMeta_Type_RESPONSE)
     {
-        LOG(ERROR, "OnReceived(): the received type is not response");
+        LOG(ERROR, "OnReceived(): remote: [%s] the received type is not response", EndPointToString(_remote_endpoint));
         return;
     }
     uint64_t sequence_id = meta.sequence_id();
-    RpcControllerPtr contro_ptr;
+    RpcControllerPtr cnt_ptr;
     if(_controller_map.find(sequence_id) == _controller_map.end())
     {
-        LOG(ERROR, "OnReceived(): sequence_id:%d controller is not existed", sequence_id);
+        LOG(ERROR, "OnReceived(): remote: [%s] sequence_id:%d controller is not existed", EndPointToString(_remote_endpoint), sequence_id);
         return;
     }
     else
     {
-        contro_ptr = _controller_map[sequence_id];
+        cnt_ptr = _controller_map[sequence_id];
         EraseRequest(sequence_id);
     }
     // 检查是否已经超时
-    if(contro_ptr->IsDone())
+    if(cnt_ptr->IsDone())
     {
         LOG(INFO, "OnReceived(): %s {%lu}: request has already done(maybe timeout)", EndPointToString(_remote_endpoint).c_str(), sequence_id);
         return;
@@ -228,17 +233,17 @@ void RpcClientStream::OnReceived()
     {
         if(meta.has_reason())
         {
-            contro_ptr->Done(meta.reason(), true);
+            cnt_ptr->Done(meta.reason(), true);
         }
         else
         {
-            contro_ptr->Done("request maybe failed but reason is not set", true);
+            cnt_ptr->Done("request maybe failed but reason is not set", true);
         }
     }
     else
     {
-        contro_ptr->SetReceiveMessage(message_buf);
-        contro_ptr->Done("success", false);
+        cnt_ptr->SetReceiveMessage(message_buf);
+        cnt_ptr->Done("success", false);
     }
 }
 

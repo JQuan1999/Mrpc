@@ -27,6 +27,7 @@ public:
     void CallMethod(const RpcControllerPtr& crt);
 
 private:
+
     void PutItem(const RpcControllerPtr& crt);
 
     bool GetItem();
@@ -37,24 +38,21 @@ private:
 
     void EraseRequest(int sequence_id);
 
-    void StartSend();
+    virtual void StartSend();
 
-    // AsnycWrite的回调函数
-    void OnWrite(const boost::system::error_code& ec, size_t bytes);
+    virtual void OnWrite(const boost::system::error_code& ec, size_t bytes);
 
-    // 开始接收
-    void StartReceive();
+    virtual void OnClose(std::string reason);
 
-    void OnReadHeader(const boost::system::error_code& ec, size_t bytes);
+    virtual void StartReceive();
 
-    void OnReadBody(const boost::system::error_code& ec, size_t bytes);
+    virtual void OnReadHeader(const boost::system::error_code& ec, size_t bytes);
 
-    void OnReceived();
+    virtual void OnReadBody(const boost::system::error_code& ec, size_t bytes);
+
+    virtual void OnReceived();
 
     void NewReceiveBuffer();
-
-    // AsyncRead的回调函数
-    void OnReadSome(const boost::system::error_code& ec, size_t bytes);
 
     // 重置接收的临时变量
     void ClearReceiveEnv();

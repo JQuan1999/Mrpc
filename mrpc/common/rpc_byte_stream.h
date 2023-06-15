@@ -6,9 +6,9 @@
 
 #include<mrpc/common/logger.h>
 #include<mrpc/common/end_point.h>
-#define REVEIVE_FACTOR_SIZE 3
+#define REVEIVE_FACTOR_SIZE 1
 #define MAX_REVEIVE_FACTOR_SIZE 10
-#define SEND_FACTOR_SIZE 3
+#define SEND_FACTOR_SIZE 1
 #define MAX_SEND_FACTOR_SIZE 10
 
 namespace mrpc{
@@ -37,16 +37,18 @@ public:
         _socket.close();
     }
 
-    void Close(const std::string msg){
+    void Close(const std::string msg)
+    {
         if(_status.load() == SOCKET_CLOSED)
         {
             return;
         }
         else
         {
+            LOG(INFO, "close(): remote: [%s] connection closed: %s", EndPointToString(GetRemote()).c_str(), msg.c_str());
             _status.store(SOCKET_CLOSED);
             _socket.close();
-            LOG(INFO, "close(): connection closed: %s", msg.c_str());
+            OnClose(msg);
         }
     }
 
@@ -124,7 +126,7 @@ protected:
         }
         else
         {
-            _sending.store(false);
+            _sending.store(true);
             return true;
         }
     }
@@ -152,6 +154,7 @@ protected:
         else
         {
             _receiving.store(true);
+            return true;
         }
     }
 
@@ -172,6 +175,7 @@ protected:
     virtual void OnReadHeader(const boost::system::error_code& ec, size_t bytes) = 0;
     virtual void OnReadBody(const boost::system::error_code& ec, size_t bytes) = 0;
     virtual void OnWrite(const boost::system::error_code& ec, size_t bytes) = 0;
+    virtual void OnClose(std::string reason) = 0;
 
     // 异步读数据
     void AsyncReadHeader(char* data, size_t size)
@@ -204,7 +208,7 @@ private:
             LOG(ERROR, "OnConnect(): connect erorr: %s: %s", EndPointToString(_remote_endpoint), ec.message().c_str());
             Close("connect erorr " + ec.message());
         }else{
-            LOG(INFO, "OnConnect(): connect success from %s", EndPointToString(_remote_endpoint));
+            LOG(INFO, "OnConnect(): connect success from %s", EndPointToString(_remote_endpoint).c_str());
             _status.store(SOCKET_CONNECTED);
             StartReceive();
             StartSend();

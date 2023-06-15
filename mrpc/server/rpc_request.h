@@ -17,7 +17,7 @@ namespace mrpc
 class RpcRequest
 {
 public:
-    RpcRequest(const RpcHeader& header, const ReadBufferPtr& read_buf);
+    RpcRequest(RpcHeader header, const ReadBufferPtr& read_buf);
     void Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& service_pool);
 
     void CallMethod(google::protobuf::Service* service,

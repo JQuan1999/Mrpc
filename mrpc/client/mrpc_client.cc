@@ -18,11 +18,11 @@ RpcClient::~RpcClient()
 
 void RpcClient::Start()
 {
-    std::lock_guard<std::mutex> lock(_start_stop_mutex);
-    if(_is_running)
+    if(_is_running.load() == true)
     {
-        return; // 已经启动
+        return;
     }
+    _is_running.store(true);
     _work_thread_group.reset(new ThreadGroup(_option.work_thread_num, "client_work_thread_group"));
     _callback_group.reset(new ThreadGroup(_option.callback_thread_num, "client_callback_thread_group"));
 }
@@ -39,8 +39,16 @@ ThreadGroupPtr RpcClient::GetCallBackGroup()
 
 void RpcClient::Stop()
 {
-    std::lock_guard<std::mutex> lock(_start_stop_mutex);
-    if(!_is_running) return;
+    if(!_is_running.load()){
+        return;
+    }
+    _is_running.store(false);
+
+    std::lock_guard<std::mutex> lock(_stream_map_mutex);
+    for(auto& p: _stream_map)
+    {
+        p.second->Close("client closed");
+    }
     _work_thread_group->Stop();
     _callback_group->Stop();
     // 将指针置空
@@ -100,10 +108,10 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
 
     // 插入header
     writebuf_ptr->SetData(pos, reinterpret_cast<char*>(&header), header_size);
-    ReadBufferPtr readbuf_ptr;
-    writebuf_ptr->SwapOut(readbuf_ptr.get());
+    ReadBufferPtr readbuf(new ReadBuffer());
+    writebuf_ptr->SwapOut(readbuf.get());
 
-    crt->SetSendMessage(readbuf_ptr);
+    crt->SetSendMessage(readbuf);
     // 3. 设置回调函数 回调函数中将cntl的收到的数据反序列化为response
     crt->PushDoneCallBack(std::bind(&RpcClient::DoneCallBack, shared_from_this(), response, std::placeholders::_1));
 
@@ -114,7 +122,7 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
 
 RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
 {
-    // Todo 多线程访问需要加锁
+    std::lock_guard<std::mutex> lock(_stream_map_mutex);
     if(_stream_map.count(endpoint))
     {
         return _stream_map[endpoint];
@@ -143,12 +151,12 @@ void RpcClient::DoneCallBack(google::protobuf::Message* response, const RpcContr
         CHECK(response_buf.get());
         if(!response->ParseFromZeroCopyStream(response_buf.get()))
         {
-            LOG(ERROR, "DoneCallBack(): %s: parse response message failed", EndPointToString(crt->GetRemoteEndPoint()).c_str());
+            LOG(ERROR, "DoneCallBack(): reomte: [%s] parse response message failed", EndPointToString(crt->GetRemoteEndPoint()).c_str());
             crt->SetFailed("parse response message failed");
         }
         else
         {
-            LOG(DEBUG, "DoneCallBack(): %s: parse response message success", EndPointToString(crt->GetRemoteEndPoint()).c_str());
+            LOG(DEBUG, "DoneCallBack(): reomte: [%s] parse response message success", EndPointToString(crt->GetRemoteEndPoint()).c_str());
         }
     }
 }

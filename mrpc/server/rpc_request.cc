@@ -2,7 +2,7 @@
 
 namespace mrpc
 {
-RpcRequest::RpcRequest(const RpcHeader& header, const ReadBufferPtr& read_buf)
+RpcRequest::RpcRequest(RpcHeader header, const ReadBufferPtr& read_buf)
 {
     _header = header;
     _read_buf = read_buf;
@@ -17,7 +17,8 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     if(!_meta.ParseFromZeroCopyStream(_meta_buf.get()))
     {
         std::string meta_string = _meta_buf->ToString();
-        LOG(ERROR, "Parse(): receive meta buf is parse error, meta buf data: %s", meta_string.c_str());
+        LOG(ERROR, "Parse() remote address: [%s] receive meta buf is parse error, meta buf data: %s", 
+            EndPointToString(stream->GetRemote()).c_str(), meta_string.c_str());
         SendFailedMessage(stream, "receive meta parse error");
         return;
     }
@@ -25,7 +26,7 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     RpcMeta_Type type = _meta.type();
     if(type != RpcMeta_Type_REQUEST)
     {
-        LOG(ERROR, "Parse(): receive type is not request");
+        LOG(ERROR, "Parse() remote address: [%s] receive type is not request", EndPointToString(stream->GetRemote()).c_str());
         SendFailedMessage(stream, "receive type is not request");
         return;
     }
@@ -36,7 +37,8 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     ServiceBoard* svc_board = service_pool->GetServiceBoard(svc_name);
     if(svc_board == nullptr)
     {
-        LOG(ERROR, "service name:%s is not existed", svc_name.c_str());
+        LOG(ERROR, "Parse() remote address: [%s] service name:%s is not existed", 
+            EndPointToString(stream->GetRemote()).c_str(), svc_name.c_str());
         SendFailedMessage(stream, "service name is not existed");
         return;
     }
@@ -45,7 +47,8 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     MethodBorad* mth_board = svc_board->GetMethodBoard(mth_name);
     if(mth_board == nullptr)
     {
-        LOG(ERROR, "method name:%s is not existed", mth_name.c_str());
+        LOG(ERROR, "Parse() remote address: [%s] method name:%s is not existed", 
+            EndPointToString(stream->GetRemote()).c_str(), mth_name.c_str());
         SendFailedMessage(stream, "method name is not existed");
         return;
     }
@@ -55,14 +58,15 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     if(!request->ParseFromZeroCopyStream(_data_buf.get()))
     {
         std::string data_str = _data_buf->ToString();
-        LOG(ERROR, "request parse error, data buf: %s", data_str.c_str());
+        LOG(ERROR, "Parse() remote address: [%s] request parse error data buf: %s", 
+            EndPointToString(stream->GetRemote()).c_str(), data_str.c_str());
         SendFailedMessage(stream, "request parse error");
         delete request;
         return;
     }
     
     google::protobuf::Message* response = svc->GetResponsePrototype(method).New();
-    RpcController* controller = new RpcController();
+    RpcControllerPtr controller(new RpcController());
     controller->SetSeverStream(stream);
     controller->SetResponse(response);
     controller->SetRequest(request);
@@ -70,7 +74,7 @@ void RpcRequest::Parse(const RpcServerStreamPtr& stream, const ServicePoolPtr& s
     controller->SetServiceName(svc_name);
     controller->SetMethodName(mth_name);
 
-    CallMethod(svc, method, controller, request, response);
+    CallMethod(svc, method, controller.get(), request, response);
 }
 
 
@@ -84,7 +88,6 @@ void RpcRequest::CallMethod(google::protobuf::Service* service,
     if(!stream.get())
     {
         LOG(ERROR, "Parse(): stream is nullptr maybe client has closed with timeout");
-        delete controller;
         delete request;
         delete response;
         return;
@@ -102,14 +105,14 @@ void RpcRequest::CallBack(RpcController* controller)
     RpcServerStreamPtr stream = controller->GetSeverStream();
     if(controller->Failed())
     {
-        LOG(ERROR, "CallBack(): %s call method: %s:%s failed: %s", 
+        LOG(ERROR, "CallBack(): remote address :[%s] call method: %s:%s failed: %s", 
             EndPointToString(controller->GetRemoteEndPoint()).c_str(), 
             controller->GetServiceName().c_str(), controller->GetMethodName().c_str(),
             controller->ErrorText().c_str());
         SendFailedMessage(stream, controller->ErrorText()); // callmethod失败
     }else
     {
-        LOG(DEBUG, "CallBack(): %s call method: %s:%s succed: %s", 
+        LOG(DEBUG, "CallBack(): remote address :[%s] call method: %s:%s succed: %s", 
             EndPointToString(controller->GetRemoteEndPoint()).c_str(), 
             controller->GetServiceName().c_str(), controller->GetMethodName().c_str(),
             controller->ErrorText().c_str());
@@ -120,27 +123,27 @@ void RpcRequest::CallBack(RpcController* controller)
     google::protobuf::Message* response = controller->GetResponse();
     delete request;
     delete response;
-    delete controller;
 }
 
 void RpcRequest::SendFailedMessage(const RpcServerStreamPtr& stream, std::string reason)
 {
     RpcMeta meta;
     meta.set_type(RpcMeta_Type_RESPONSE);
-    meta.set_sequence_id(_meta.sequence_id());
+    meta.set_sequence_id(-1);
     meta.set_failed(true);
     meta.set_reason(reason);
 
     RpcHeader header;
-    ReadBufferPtr readbuf;
-    WriteBufferPtr writebuf;
+    ReadBufferPtr readbuf(new ReadBuffer());
+    WriteBufferPtr writebuf(new WriteBuffer());
     // 头部保留空间后面确定meta和response的大小后在保留位置写入header
     int header_size = sizeof(header);
-    int pos = writebuf->Reserve(header_size); // pos为待写入的位置即writebuf已有字节数
-    
+    // pos为待写入的位置即writebuf已有字节数
+    int pos = writebuf->Reserve(header_size); 
+
     if(!meta.SerializeToZeroCopyStream(writebuf.get()))
     {
-        LOG(ERROR, "meta serialize failed");
+        LOG(ERROR, "SendFailedMessage() remote address: [%s] response meta serialize failed", EndPointToString(stream->GetRemote()).c_str());
         stream->SendResponse(readbuf);
     }
     int meta_size = writebuf->ByteCount() - header_size - pos;
@@ -160,15 +163,16 @@ void RpcRequest::SendSuccedMessage(const RpcServerStreamPtr& stream, RpcControll
     meta.set_sequence_id(_meta.sequence_id());
     meta.set_failed(false);
     RpcHeader header;
-    ReadBufferPtr readbuf;
-    WriteBufferPtr writebuf;
+    ReadBufferPtr readbuf(new ReadBuffer());
+    WriteBufferPtr writebuf(new WriteBuffer());
 
     int header_size = sizeof(header);
     int pos = writebuf->Reserve(header_size);
 
     if(!meta.SerializeToZeroCopyStream(writebuf.get()))
     {
-        LOG(ERROR, "meta serialize failed");
+        LOG(ERROR, "SendFailedMessage() remote address: [%s] meta serialize failed", 
+            EndPointToString(stream->GetRemote()).c_str());
         stream->SendResponse(readbuf);
     }
     int meta_size = writebuf->ByteCount() - header_size - pos;
@@ -176,7 +180,8 @@ void RpcRequest::SendSuccedMessage(const RpcServerStreamPtr& stream, RpcControll
     google::protobuf::Message* respone = controller->GetResponse();
     if(!respone->SerializeToZeroCopyStream(writebuf.get()))
     {
-        LOG(ERROR, "response serialize failed");
+        LOG(ERROR, "SendFailedMessage() remote address: [%s] response serialize failed", 
+            EndPointToString(stream->GetRemote()).c_str());
         stream->SendResponse(readbuf);
     }
     int data_size = writebuf->ByteCount() - pos - header_size - meta_size;

@@ -9,6 +9,7 @@ namespace mrpc{
 class RpcChannel: public google::protobuf::RpcChannel{
 public:
     RpcChannel(){};
+
     virtual ~RpcChannel(){};
 
     // 初始化 解析address

@@ -22,25 +22,28 @@ class RpcServerStream: public RpcByteStream
 public:
     typedef std::function<void(const RpcServerStreamPtr&, RpcRequest)> ReceiveCallBack;
     typedef std::function<void(const RpcServerStreamPtr&)> CloseCallback;
+
     RpcServerStream(IoContext& ioc, const tcp::endpoint& endpoint);
 
     ~RpcServerStream();
 
-    void SendResponse(ReadBufferPtr& readbuf);
+    void SendResponse(ReadBufferPtr readbuf);
 
     void PutItem(ReadBufferPtr& readbuf);
 
     bool GetItem();
 
-    void StartSend();
+    virtual void StartSend();
 
-    void OnWrite(const boost::system::error_code& ec, size_t bytes);
+    virtual void OnClose(std::string);
+    
+    virtual void OnWrite(const boost::system::error_code& ec, size_t bytes);
 
-    void StartReceive();
+    virtual void StartReceive();
 
-    void OnReadHeader(const boost::system::error_code& ec, size_t bytes);
+    virtual void OnReadHeader(const boost::system::error_code& ec, size_t bytes);
 
-    void OnReadBody(const boost::system::error_code& ec, size_t bytes);    
+    virtual void OnReadBody(const boost::system::error_code& ec, size_t bytes);    
 
     void ClearReceiveEnv();
 

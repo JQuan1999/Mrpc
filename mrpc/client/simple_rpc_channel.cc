@@ -103,7 +103,6 @@ uint32_t RpcSimpleChannel::WaitCount()
     return _wait_count.load();
 }
 
-
 void RpcSimpleChannel::WaitDone(RpcController* crt)
 {
     if(crt->IsSync())

@@ -8,6 +8,7 @@ RpcServerStream::RpcServerStream(IoContext& ioc, const tcp::endpoint& endpoint)
     : RpcByteStream(ioc, endpoint)
     , _receive_bytes(0)
     , _receive_data()
+    , _readbuf_ptr(new ReadBuffer())
     , _send_bytes(0)
     , _send_data(nullptr)
 {
@@ -19,7 +20,7 @@ RpcServerStream::~RpcServerStream()
     Close("rpc server stream destructed");
 }
 
-void RpcServerStream::SendResponse(ReadBufferPtr& readbuf)
+void RpcServerStream::SendResponse(ReadBufferPtr readbuf)
 {
     if(IsClosed())
     {
@@ -39,15 +40,15 @@ void RpcServerStream::StartSend()
     {
         if(!GetItem())
         {
-            LOG(DEBUG, "StartSend(): the send buf queue is empty");
+            LOG(DEBUG, "StartSend(): remote: [%s] the send buf queue is empty", EndPointToString(_remote_endpoint).c_str());
             FreeSendingFlag();
             return;
         }
         else
         {
-            if(!_sendbuf_ptr->Next(&_send_data, &_send_bytes))
+            if(!_sendbuf_ptr->Next(&_send_data, &_send_bytes) || _send_bytes == 0)
             {
-                LOG(DEBUG, "sendbuf is empty");
+                LOG(DEBUG, "StartSend(): remote: [%s] sendbuf is empty", EndPointToString(_remote_endpoint).c_str());
                 FreeSendingFlag();
             }
             else
@@ -62,7 +63,7 @@ void RpcServerStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
 {
     if(ec)
     {
-        LOG(ERROR, "write to:%s error msg:%s", EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
+        LOG(ERROR, "write to:%s error msg: %s", EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
         Close("write error");
         return;
     }else
@@ -75,7 +76,7 @@ void RpcServerStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
         }
         else
         {
-            LOG(DEBUG, "success write %d bytes data to: %s", bytes, EndPointToString(_remote_endpoint));
+            LOG(DEBUG, "success write %d bytes data to: %s", bytes, EndPointToString(_remote_endpoint).c_str());
             if(!_sendbuf_ptr->Next(&_send_data, &_send_bytes))
             {
                 FreeSendingFlag();
@@ -87,6 +88,11 @@ void RpcServerStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
             }
         }
     }
+}
+
+void RpcServerStream::OnClose(std::string)
+{
+    _close_callback(std::dynamic_pointer_cast<RpcServerStream>(shared_from_this()));
 }
 
 void RpcServerStream::PutItem(ReadBufferPtr& readbuf)
@@ -102,8 +108,12 @@ bool RpcServerStream::GetItem()
     {
         return false;
     }
-    _sendbuf_ptr = _send_buf_queue.front();
-    _send_buf_queue.pop_front();
+    else
+    {
+        _sendbuf_ptr = _send_buf_queue.front();
+        _send_buf_queue.pop_front();
+        return true;
+    }
 }
 
 void RpcServerStream::StartReceive()
@@ -124,8 +134,14 @@ void RpcServerStream::OnReadHeader(const boost::system::error_code& ec, size_t b
 {
     if(ec)
     {
-        LOG(ERROR, "OnReadHeader(): read proto header error, error msg: ", ec.message());
-        Close("read error");
+        if(ec == boost::asio::error::eof)
+        {
+            LOG(ERROR, "OnReadHeader(): client has closed connection error msg: %s", ec.message().c_str());
+            Close("client closed");
+        }else{
+            LOG(ERROR, "OnReadHeader(): read proto header error error msg: %s", ec.message().c_str());
+            Close("read error");
+        }
         return;
     }
     else
@@ -143,16 +159,20 @@ void RpcServerStream::OnReadBody(const boost::system::error_code& ec, size_t byt
         if(ec == boost::asio::error::eof)
         {
             LOG(ERROR, "OnReadBody(): client has closed connection, error msg: ", ec.message());
+            Close("client has closed");
         }else{
             LOG(ERROR, "OnReadBody(): read request body error, error msg: ", ec.message());
+            Close("read error");
         }
-        Close("read error");
         return;
     }
     else
     {
         _receive_bytes += bytes;
         _receive_data.Forward(bytes);
+        // change write to read
+        _receive_data.SetCapacity(_receive_data.GetSize());
+        _receive_data.SetSize(0);
         _readbuf_ptr->Append(_receive_data);
         if(_receive_bytes == _header.message_size)
         {
@@ -180,7 +200,7 @@ void RpcServerStream::ClearReceiveEnv()
 {
     _receive_factor_size = REVEIVE_FACTOR_SIZE;
     _receive_bytes = 0;
-    _readbuf_ptr.reset();
+    _readbuf_ptr.reset(new ReadBuffer());
     NewBuffer();
 }
 

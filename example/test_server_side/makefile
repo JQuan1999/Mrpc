@@ -1,11 +1,11 @@
-SRC = mock_echo_test.cc
-OBJ = mock_echo_test.o
-BIN = mock_echo_test
+SRC = $(wildcard ./cc)
+OBJ = $(patsubst %.cc,%.o,$(SRC))
+BIN = client server
 
-PROTO = echo.proto
-PROTO_OBJ = echo.pb.o
-PROTO_SRC = echo.pb.cc
-PROTO_HEADER = echo.pb.h
+PROTO = test.proto
+PROTO_OBJ = test.pb.o
+PROTO_SRC = test.pb.cc
+PROTO_HEADER = test.pb.h
 
 CXX_FLAGS = -g -W -Wall -O0
 OUTPUT = /home/ubuntu/Desktop/mrpc/output
@@ -17,8 +17,11 @@ LDFLAGS += $(LIB)
 
 all: $(BIN)
 
-$(BIN): $(PROTO_OBJ) $(OBJ)
-	g++ $(PROTO_OBJ) $(OBJ) -o $@ $(LDFLAGS)
+client: client.o $(PROTO_OBJ)
+	g++ client.o $(PROTO_OBJ) -o $@ $(LDFLAGS)
+
+server: server.o $(PROTO_OBJ)
+	g++ server.o $(PROTO_OBJ) -o $@ $(LDFLAGS)
 
 %.pb.o: %.pb.cc
 	g++ -c $^ -o $@ $(CXX_FLAGS)

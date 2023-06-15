@@ -5,6 +5,7 @@
 #include<unordered_map>
 #include<memory>
 #include<mutex>
+#include<atomic>
 
 #include<mrpc/common/rpc_controller.h>
 #include<mrpc/common/thread_group.h>
@@ -42,6 +43,7 @@ class RpcClient: public std::enable_shared_from_this<RpcClient>
 {
 public:
     explicit RpcClient(RpcClientOptions option = RpcClientOptions());
+
     ~RpcClient();
 
     IoContext& GetIoService();
@@ -69,8 +71,8 @@ private:
 
 private:
     uint64_t _next_request_id; // 表示client下一个request_id Todo原子变量
-    std::mutex _start_stop_mutex;
-    bool _is_running;
+    std::atomic<bool> _is_running;
+    std::mutex _stream_map_mutex;
     std::map<tcp::endpoint, RpcClientStreamPtr> _stream_map; // endpoint对应一个stream连接
     RpcClientOptions _option;
     ThreadGroupPtr _work_thread_group;
