@@ -6,33 +6,43 @@ RpcClientStream::RpcClientStream(IoContext& ioc, const tcp::endpoint& endpoint)
     : RpcByteStream(ioc, endpoint)
     , _receive_bytes(0)
     , _receive_data()
+    , _readbuf_ptr(new ReadBuffer())
+    , _send_bytes(0)
     , _send_data(nullptr)
+    , _close_callback(nullptr)
 {
 
 }
 
 RpcClientStream::~RpcClientStream()
 {
+    LOG(DEBUG, "in ~RpcClientStream()");
     Close("rpc stream destructed");
 }
 
-void RpcClientStream::CallMethod(const RpcControllerPtr& crt)
+void RpcClientStream::CallMethod(const RpcControllerPtr& cnt)
 {
     if(!IsConnected())
     {
         LOG(ERROR, "CallMethod(): socket is not connected: %s", EndPointToString(_remote_endpoint).c_str());
-        crt->Done("socket is not connected", true);
+        cnt->Done("socket is not connected", true);
         return;
     }
-    AddRequest(crt);
-    PutItem(crt);
+    AddRequest(cnt);
+    PutItem(cnt);
     StartSend();
+}
+
+void RpcClientStream::SetCloseCallback(callback close_callback)
+{
+    _close_callback = close_callback;
 }
 
 void RpcClientStream::StartSend()
 {
     if(TrySend())
     {
+        ClearSendEnv();
         if(!GetItem())
         {
             LOG(DEBUG, "StartSend(): the send buf queue is empty");
@@ -41,14 +51,14 @@ void RpcClientStream::StartSend()
         }
         if(IsDone())
         {
-            LOG(DEBUG, "StartSend(): the rpc request has been done maybe timeout: %s", 
+            LOG(DEBUG, "StartSend(): remote: %s the rpc request has been done maybe timeout", 
                         EndPointToString(_remote_endpoint).c_str());
             FreeSendingFlag();
             return;
         }
         if(!_sendbuf_ptr->Next(&_send_data, &_send_bytes))
         {
-            LOG(DEBUG, "StartSend(): the sendbuf is empty or get data failed: %s",
+            LOG(DEBUG, "StartSend(): remote: %s the sendbuf is empty or get data failed",
                         EndPointToString(_remote_endpoint).c_str());
             FreeSendingFlag();
             return;
@@ -65,11 +75,10 @@ void RpcClientStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
         LOG(ERROR, "OnWriteSome(): %s: write erorr: %s", 
             EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
         // 调用当前crt的done函数
-        _send_crt->Done("write erorr", true);
-        EraseRequest(_send_crt->GetSequenceId());
+        _send_cnt->Done("write erorr", true);
+        EraseRequest(_send_cnt->GetSequenceId());
         // 关闭连接
         Close(ec.message());
-        FreeSendingFlag();
         return;
     }
     if(bytes < _send_bytes)
@@ -81,9 +90,9 @@ void RpcClientStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
     }
     else
     {
+        LOG(DEBUG, "OnWrite(): success write %d bytes data to: %s", bytes, EndPointToString(_remote_endpoint).c_str());
         if(!_sendbuf_ptr->Next(&_send_data, &_send_bytes)) // _send_buf为空数据已发送完
         {
-            LOG(DEBUG, "send data to %s succeed", EndPointToString(_remote_endpoint).c_str());
             FreeSendingFlag(); // 在回调函数中恢复_sending
             StartSend(); // 继续尝试发送队列剩余数据
         }
@@ -96,18 +105,22 @@ void RpcClientStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
 
 void RpcClientStream::OnClose(std::string reason)
 {
-    LOG(DEBUG, "OnClose(): Realease all wait rpc controller");
+    LOG(DEBUG, "OnClose(): remote [%s] realease all wait rpc controller", EndPointToString(_remote_endpoint).c_str());
     std::lock_guard<std::mutex> lock(_controller_map_mutex);
     for(auto& p: _controller_map)
     {
         p.second->Done(reason, false);
     }
+    if(_close_callback)
+    {
+        _close_callback(std::dynamic_pointer_cast<RpcClientStream>(shared_from_this()));
+    }
 }
 
-void RpcClientStream::PutItem(const RpcControllerPtr& crt)
+void RpcClientStream::PutItem(const RpcControllerPtr& cnt)
 {
     std::lock_guard<std::mutex> lock(_send_mutex);
-    _send_buf_queue.push_back(crt);
+    _send_buf_queue.push_back(cnt);
 }
 
 bool RpcClientStream::GetItem()
@@ -119,8 +132,8 @@ bool RpcClientStream::GetItem()
     }
     else
     {
-        _send_crt = _send_buf_queue.front();
-        _sendbuf_ptr = _send_crt->GetSendMessage();
+        _send_cnt = _send_buf_queue.front();
+        _sendbuf_ptr = _send_cnt->GetSendMessage();
         _send_buf_queue.pop_front();
         return true;
     }
@@ -131,6 +144,7 @@ void RpcClientStream::StartReceive()
 {
     if(!IsConnected())
     {
+        LOG(ERROR, "StartReceive(): remote: %s is not connected", EndPointToString(_remote_endpoint).c_str());
         return;
     }
     if(TryReceive())
@@ -144,8 +158,14 @@ void RpcClientStream::OnReadHeader(const boost::system::error_code& ec, size_t b
 {
     if(ec)
     {
-        LOG(ERROR, "OnReadHeader(): read proto header error, error msg: ", ec.message());
-        Close("read error");
+         if(ec == boost::asio::error::eof)
+        {
+            LOG(ERROR, "OnReadHeader(): server: %s has closed connection error msg: %s", EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
+            Close("client closed");
+        }else{
+            LOG(ERROR, "OnReadHeader(): server: %s read header error error msg: %s", EndPointToString(_remote_endpoint).c_str(),ec.message().c_str());
+            Close("read error");
+        }
         return;
     }
     else
@@ -162,23 +182,30 @@ void RpcClientStream::OnReadBody(const boost::system::error_code& ec, size_t byt
     {
         if(ec == boost::asio::error::eof)
         {
-            LOG(ERROR, "OnReadBody(): client has closed connection, error msg: ", ec.message());
-        }else{
-            LOG(ERROR, "OnReadBody(): read request body error, error msg: ", ec.message());
+            LOG(ERROR, "OnReadHeader(): server: %s has closed connection error msg: %s", EndPointToString(_remote_endpoint), ec.message().c_str());
+            Close("client closed");
         }
-        Close("read error");
+        else
+        {
+            LOG(ERROR, "OnReadHeader(): server: %s read header error error msg: %s", EndPointToString(_remote_endpoint),ec.message().c_str());
+            Close("read error");
+        }
         return;
     }
     else
     {
         _receive_bytes += bytes;
         _receive_data.Forward(bytes);
+
+        _receive_data.SetCapacity(_receive_data.GetSize());
+        _receive_data.SetSize(0);
         _readbuf_ptr->Append(_receive_data);
         if(_receive_bytes == _header.message_size)
         {
             // 收到完整的消息
-            OnReceived();
+            OnReceived(_readbuf_ptr);
             FreeReceivingFlag();
+            StartReceive();
         }
         else
         {
@@ -192,39 +219,48 @@ void RpcClientStream::OnReadBody(const boost::system::error_code& ec, size_t byt
     }
 }
 
-void RpcClientStream::OnReceived()
+void RpcClientStream::OnReceived(ReadBufferPtr readbuf)
 {
     RpcMeta meta;
-    ReadBufferPtr meta_buf = _readbuf_ptr->Split(_header.meta_size);
-    ReadBufferPtr message_buf = _readbuf_ptr;
+    ReadBufferPtr meta_buf = readbuf->Split(_header.meta_size);
+    ReadBufferPtr data_buf = readbuf;
     if(!meta.ParseFromZeroCopyStream(meta_buf.get()))
     {
-        LOG(ERROR, "OnReceived(): remote: [%s] parse metabuf erorr", EndPointToString(_remote_endpoint));
+        LOG(ERROR, "OnReceived(): remote: [%s] parse metabuf erorr", EndPointToString(_remote_endpoint).c_str());
         return;
     }
     // 检查是否为request
     RpcMeta_Type type = meta.type();
     if(type != RpcMeta_Type_RESPONSE)
     {
-        LOG(ERROR, "OnReceived(): remote: [%s] the received type is not response", EndPointToString(_remote_endpoint));
+        LOG(ERROR, "OnReceived(): remote: [%s] the received type is not response", EndPointToString(_remote_endpoint).c_str());
         return;
     }
     uint64_t sequence_id = meta.sequence_id();
-    RpcControllerPtr cnt_ptr;
+    if(sequence_id == 0) // 服务端解析meta出错 sequnce_id = 0
+    {
+        LOG(ERROR, "OnReceived(): remote: [%s] the sequence_id is zero maybe server parser meta data failed", 
+            EndPointToString(_remote_endpoint).c_str());
+        return;
+    }
+
+    // 找到sequnce_id对应的cnt
+    RpcControllerPtr cnt;
     if(_controller_map.find(sequence_id) == _controller_map.end())
     {
-        LOG(ERROR, "OnReceived(): remote: [%s] sequence_id:%d controller is not existed", EndPointToString(_remote_endpoint), sequence_id);
+        LOG(ERROR, "OnReceived(): remote: [%s] sequence_id:%lu controller is not existed may be timeout", 
+            EndPointToString(_remote_endpoint).c_str(), sequence_id);
         return;
     }
     else
     {
-        cnt_ptr = _controller_map[sequence_id];
+        cnt = _controller_map[sequence_id];
         EraseRequest(sequence_id);
     }
     // 检查是否已经超时
-    if(cnt_ptr->IsDone())
+    if(cnt->IsDone())
     {
-        LOG(INFO, "OnReceived(): %s {%lu}: request has already done(maybe timeout)", EndPointToString(_remote_endpoint).c_str(), sequence_id);
+        LOG(INFO, "OnReceived(): %s {%lu}: request has already done maybe timeout", EndPointToString(_remote_endpoint).c_str(), sequence_id);
         return;
     }
 
@@ -233,17 +269,26 @@ void RpcClientStream::OnReceived()
     {
         if(meta.has_reason())
         {
-            cnt_ptr->Done(meta.reason(), true);
+            cnt->SetRemoteReason(meta.reason());
+            cnt->Done("", true);
         }
         else
         {
-            cnt_ptr->Done("request maybe failed but reason is not set", true);
+            cnt->Done("request maybe failed but reason is not set", true);
         }
+    }
+
+    // 反序列化response
+    google::protobuf::Message* response = cnt->GetResponse();
+    CHECK(response);
+    if(!response->ParseFromZeroCopyStream(data_buf.get()))
+    {
+        LOG(ERROR, "OnReceived(): reomte: [%s] parse response message failed", EndPointToString(_remote_endpoint).c_str());
+        cnt->Done("parse response message failed", true);
     }
     else
     {
-        cnt_ptr->SetReceiveMessage(message_buf);
-        cnt_ptr->Done("success", false);
+        cnt->Done("callmethod success", false);
     }
 }
 
@@ -251,8 +296,15 @@ void RpcClientStream::ClearReceiveEnv()
 {
     _receive_factor_size = REVEIVE_FACTOR_SIZE;
     _receive_bytes = 0;
-    _readbuf_ptr.reset();
+    _readbuf_ptr.reset(new ReadBuffer());
     NewReceiveBuffer();
+}
+
+void RpcClientStream::ClearSendEnv()
+{
+    _send_cnt.reset();
+    _sendbuf_ptr.reset();
+    _send_bytes = 0;
 }
 
 void RpcClientStream::NewReceiveBuffer()
@@ -263,16 +315,16 @@ void RpcClientStream::NewReceiveBuffer()
 
 bool RpcClientStream::IsDone()
 {
-    return _send_crt->IsDone();
+    return _send_cnt->IsDone();
 }
 
 
-void RpcClientStream::AddRequest(const RpcControllerPtr& crt)
+void RpcClientStream::AddRequest(const RpcControllerPtr& cnt)
 {
-    uint64_t _id = crt->GetSequenceId();
+    uint64_t _id = cnt->GetSequenceId();
     // Todo check existed
     std::lock_guard<std::mutex> lock(_controller_map_mutex);
-    _controller_map[_id] = crt;
+    _controller_map[_id] = cnt;
 }
 
 void RpcClientStream::EraseRequest(int sequence_id)

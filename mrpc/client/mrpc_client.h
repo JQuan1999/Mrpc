@@ -19,7 +19,12 @@ namespace mrpc{
 struct RpcClientOptions
 {
     int work_thread_num; // 工作线程数目
+
     int callback_thread_num; // 回调函数线程数目
+
+    ThreadFunc init_func;
+    
+    ThreadFunc end_func;
 
     int keep_alive_time; // 保持连接的时间 超过这个时间未进行读写就关闭
 
@@ -30,6 +35,8 @@ struct RpcClientOptions
     RpcClientOptions()
         : work_thread_num(4)
         , callback_thread_num(1)
+        , init_func(nullptr)
+        , end_func(nullptr)
         , keep_alive_time(-1)
         , connect_timeout(-1)
         , no_delay(true)
@@ -64,6 +71,8 @@ private:
     RpcClient(const RpcClient&);
 
     RpcClient& operator=(const RpcClient&);
+
+    void EraseStream(const RpcClientStreamPtr& stream);
 
     RpcClientStreamPtr FindOrCreateStream(const tcp::endpoint& endpoint);
     

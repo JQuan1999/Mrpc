@@ -83,6 +83,7 @@ public:
         {
             return;
         }
+        _is_closed.store(true);
         boost::system::error_code ec;
         _acceptor.cancel(ec);
         _acceptor.close(ec);

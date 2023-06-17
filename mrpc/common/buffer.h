@@ -22,9 +22,13 @@ class Buffer{
 
 public:
     Buffer();
+
     Buffer(int factor_size);
+
     Buffer(const Buffer& buf);
+
     ~Buffer();
+    
     char* GetData();
 
     char* GetHeader();

@@ -23,8 +23,8 @@ void RpcClient::Start()
         return;
     }
     _is_running.store(true);
-    _work_thread_group.reset(new ThreadGroup(_option.work_thread_num, "client_work_thread_group"));
-    _callback_group.reset(new ThreadGroup(_option.callback_thread_num, "client_callback_thread_group"));
+    _work_thread_group.reset(new ThreadGroup(_option.work_thread_num, "client_work_thread_group", _option.init_func, _option.end_func));
+    _callback_group.reset(new ThreadGroup(_option.callback_thread_num, "client_callback_thread_group", _option.init_func, _option.end_func));
 }
 
 IoContext& RpcClient::GetIoService()
@@ -43,11 +43,13 @@ void RpcClient::Stop()
         return;
     }
     _is_running.store(false);
-
-    std::lock_guard<std::mutex> lock(_stream_map_mutex);
-    for(auto& p: _stream_map)
     {
-        p.second->Close("client closed");
+        std::lock_guard<std::mutex> lock(_stream_map_mutex);
+        for(auto& p: _stream_map)
+        {
+            p.second->Close("client stopped");
+        }
+        _stream_map.clear();
     }
     _work_thread_group->Stop();
     _callback_group->Stop();
@@ -59,21 +61,21 @@ void RpcClient::Stop()
 
 void RpcClient::CallMethod(const google::protobuf::Message* request,
                           google::protobuf::Message* response,
-                          RpcController* crt)
+                          RpcController* cnt)
 {
     if(!_is_running)
     {
         LOG(INFO, "CallMethod(): client is not running, ingore");
-        crt->Done("Client is not running, should start it first", true);
+        cnt->Done("Client is not running, should start it first", true);
         return;
     }
     // 1.检查endpoint对应的rpc_stream是否存在 或创建新的rpc_stream
-    tcp::endpoint remote_endpoint = crt->GetRemoteEndPoint();
+    tcp::endpoint remote_endpoint = cnt->GetRemoteEndPoint();
     auto stream_ptr = FindOrCreateStream(remote_endpoint);
 
     // 2.1 设置rpc协议头部 2.2 设置rpc_meta控制信息 2.3 将request序列化
-    crt->SetSequenceId(GenerateSequenceId());
-    WriteBufferPtr writebuf_ptr;
+    cnt->SetSequenceId(GenerateSequenceId());
+    WriteBufferPtr writebuf_ptr(new WriteBuffer());
     
     RpcHeader header;
     int header_size = sizeof(header);
@@ -81,14 +83,14 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
 
     RpcMeta meta;
     meta.set_type(RpcMeta::REQUEST); // 设置为request类型
-    meta.set_sequence_id(crt->GetSequenceId()); // 设置本次request id
-    meta.set_service(crt->GetServiceName());
-    meta.set_method(crt->GetMethodName());
+    meta.set_sequence_id(cnt->GetSequenceId()); // 设置本次request id
+    meta.set_service(cnt->GetServiceName());
+    meta.set_method(cnt->GetMethodName());
 
     if(!meta.SerializeToZeroCopyStream(writebuf_ptr.get()))
     {
-        LOG(ERROR, "CallMethod(): %s: serialize rpc meta failed", EndPointToString(crt->GetRemoteEndPoint()).c_str());
-        crt->Done("serialized rpc meta data failed", true);
+        LOG(ERROR, "CallMethod(): %s: serialize rpc meta failed", EndPointToString(cnt->GetRemoteEndPoint()).c_str());
+        cnt->Done("serialized rpc meta data failed", true);
         return;
     }
     
@@ -96,8 +98,8 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
     
     if(!request->SerializeToZeroCopyStream(writebuf_ptr.get()))
     {
-        LOG(ERROR, "CallMethod(): %s: serialize request failed", EndPointToString(crt->GetRemoteEndPoint()).c_str());
-        crt->Done("serialized request data failed", true);
+        LOG(ERROR, "CallMethod(): %s: serialize request failed", EndPointToString(cnt->GetRemoteEndPoint()).c_str());
+        cnt->Done("serialized request data failed", true);
         return;
     }
     int data_size = writebuf_ptr->ByteCount() - pos - header_size - meta_size;
@@ -111,14 +113,30 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
     ReadBufferPtr readbuf(new ReadBuffer());
     writebuf_ptr->SwapOut(readbuf.get());
 
-    crt->SetSendMessage(readbuf);
-    // 3. 设置回调函数 回调函数中将cntl的收到的数据反序列化为response
-    crt->PushDoneCallBack(std::bind(&RpcClient::DoneCallBack, shared_from_this(), response, std::placeholders::_1));
+    cnt->SetSendMessage(readbuf);
+    cnt->SetResponse(response);
 
-    // 4. 调用stream将数据发送给server端
-    stream_ptr->CallMethod(crt->shared_from_this());
+    // 3. 调用stream将数据发送给server端
+    stream_ptr->CallMethod(cnt->shared_from_this());
 }
 
+void RpcClient::EraseStream(const RpcClientStreamPtr& stream)
+{
+    if(!_is_running)
+    {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(_stream_map_mutex);
+    tcp::endpoint endpoint = stream->GetRemote();
+    if(!_stream_map.count(endpoint))
+    {
+        return;
+    }
+    if(!_stream_map[endpoint]->IsClosed()){
+        return;
+    }
+    _stream_map.erase(endpoint);
+}
 
 RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
 {
@@ -127,38 +145,22 @@ RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
     {
         return _stream_map[endpoint];
     }
-    RpcClientStreamPtr ptr = std::make_shared<RpcClientStream>(_work_thread_group->GetService(), endpoint);
-    _stream_map[endpoint] = ptr;
-    // 建立连接
-    ptr->AsyncConnect();
-    return ptr;
+    else
+    {
+        RpcClientStreamPtr stream = std::make_shared<RpcClientStream>(_work_thread_group->GetService(), endpoint);
+        stream->SetCloseCallback(std::bind(&RpcClient::EraseStream, shared_from_this(), std::placeholders::_1));
+        _stream_map[endpoint] = stream;
+        // 建立连接
+        stream->AsyncConnect();
+        usleep(100);
+        return stream;
+    }
 }
 
 uint64_t RpcClient::GenerateSequenceId()
 {
     ++_next_request_id;
     return _next_request_id;
-}
-
-// 接收到回复反序列化response
-void RpcClient::DoneCallBack(google::protobuf::Message* response, const RpcControllerPtr& crt)
-{
-    // 收到消息后反序列化response
-    if(!crt->Failed())
-    {
-        CHECK(response);
-        ReadBufferPtr& response_buf = crt->GetReceiveMessage();
-        CHECK(response_buf.get());
-        if(!response->ParseFromZeroCopyStream(response_buf.get()))
-        {
-            LOG(ERROR, "DoneCallBack(): reomte: [%s] parse response message failed", EndPointToString(crt->GetRemoteEndPoint()).c_str());
-            crt->SetFailed("parse response message failed");
-        }
-        else
-        {
-            LOG(DEBUG, "DoneCallBack(): reomte: [%s] parse response message success", EndPointToString(crt->GetRemoteEndPoint()).c_str());
-        }
-    }
 }
 
 }

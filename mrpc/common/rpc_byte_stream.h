@@ -34,6 +34,7 @@ public:
 
     virtual ~RpcByteStream()
     {
+        LOG(DEBUG, "in ~RpcByteStream()");
         _socket.close();
     }
 
@@ -47,6 +48,7 @@ public:
         {
             LOG(INFO, "close(): remote: [%s] connection closed: %s", EndPointToString(GetRemote()).c_str(), msg.c_str());
             _status.store(SOCKET_CLOSED);
+            _socket.cancel();
             _socket.close();
             OnClose(msg);
         }
@@ -205,7 +207,7 @@ private:
     void OnConnect(const boost::system::error_code& ec)
     {
         if(ec){
-            LOG(ERROR, "OnConnect(): connect erorr: %s: %s", EndPointToString(_remote_endpoint), ec.message().c_str());
+            LOG(ERROR, "OnConnect(): connect erorr: %s: %s", EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
             Close("connect erorr " + ec.message());
         }else{
             LOG(INFO, "OnConnect(): connect success from %s", EndPointToString(_remote_endpoint).c_str());
@@ -235,6 +237,7 @@ private:
         SOCKET_CONNECTED = 2,
         SOCKET_CLOSED = 3
     };
+    // async_connect超时设置
     std::atomic<SOCKET_STATUS> _status;
     tcp::socket _socket;
 };

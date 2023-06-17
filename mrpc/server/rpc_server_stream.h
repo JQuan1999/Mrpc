@@ -47,6 +47,8 @@ public:
 
     void ClearReceiveEnv();
 
+    void ClearSendEnv();
+
     void NewBuffer();
 
     void SetReceiveCallBack(const ReceiveCallBack& callback);
@@ -62,7 +64,6 @@ private:
     int _send_bytes;
     const void* _send_data;
     ReadBufferPtr _sendbuf_ptr;
-
     std::deque<ReadBufferPtr> _send_buf_queue;
     std::mutex _send_mutex;
 

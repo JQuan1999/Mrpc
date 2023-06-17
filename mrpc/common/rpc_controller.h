@@ -40,7 +40,11 @@ public:
     virtual void StartCancel();
 
     // client-side method
-    std::string Reason() const;
+    const std::string& RemoteReason() const;
+
+    void SetRemoteReason(std::string);
+
+    const std::string& LocalReason() const;
 
     void SetMethodName(const std::string method_name);
 
@@ -52,7 +56,7 @@ public:
     
     void Done(std::string reason, bool failed);
     
-    void PushDoneCallBack(callback func);
+    void SetDoneCallBack(callback func);
     
     void SetSync();
     
@@ -60,9 +64,9 @@ public:
     
     void StartTime();
     
-    void Wait(); // 阻塞
+    void Wait();
     
-    void Signal(); // 唤醒回调函数中执行
+    void Signal();
     
     void SetRemoteEndPoint(const tcp::endpoint&);
 
@@ -71,10 +75,6 @@ public:
     ReadBufferPtr& GetSendMessage();
     
     const tcp::endpoint GetRemoteEndPoint();
-
-    void SetReceiveMessage(ReadBufferPtr sendbuf);
-
-    ReadBufferPtr& GetReceiveMessage();
 
     // Server-side methods ---------------------------------------------
 
@@ -90,6 +90,7 @@ public:
 
     RpcServerStreamPtr GetSeverStream();
 
+    // common
     void SetRequest(google::protobuf::Message* request);
 
     google::protobuf::Message* GetRequest();
@@ -97,8 +98,6 @@ public:
     void SetResponse(google::protobuf::Message* response);
 
     google::protobuf::Message* GetResponse();
-
-    // common
     
     bool IsDone();
 
@@ -108,28 +107,27 @@ public:
 
 private:
     // client
-    std::string _reason;
     bool _failed;
-    std::atomic<bool> _done; // 是否完成
-    bool _is_sync; // 是否同步
-
-    std::stack<callback> _callback_queue; // 回调函数队列
+    bool _is_sync;
+    callback _callback;
     std::mutex _mutex;
     std::condition_variable _cond;
     ReadBufferPtr _send_buf;
-    ReadBufferPtr _receive_buf;
 
     // server
     RpcServerStreamPtr _server_stream;
-    google::protobuf::Message* _response;
-    google::protobuf::Message* _request;
 
     // common
+    std::atomic<bool> _done;
+    std::string _remote_reason;
+    std::string _local_reason;
     uint64_t _sequence_id;
     boost::asio::ip::tcp::endpoint _remote_endpoint;
     boost::asio::ip::tcp::endpoint _local_endpoint;
     std::string _method_name;
     std::string _service_name;
+    google::protobuf::Message* _response;
+    google::protobuf::Message* _request;
 };
 }
 

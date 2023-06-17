@@ -6,13 +6,16 @@ RpcController::RpcController()
     : _failed(false)
     , _is_sync(false)
     , _done(false)
+    , _callback(nullptr)
+    , _remote_reason("")
+    , _local_reason("")
 {
 
 }
 
 RpcController::~RpcController()
 {
-
+    LOG(DEBUG, "in ~RpcController() address: %p", this);
 }
 
 void RpcController::Reset()
@@ -27,7 +30,9 @@ bool RpcController::Failed() const
 
 std::string RpcController::ErrorText() const
 {
-    return _reason;
+    std::string remote_reason = "remote reason: " + (_remote_reason.size() == 0 ? "empty" : _remote_reason);
+    std::string local_reason = "local reason: " + (_local_reason.size() == 0 ? "empty" : _local_reason);
+    return remote_reason + " " + local_reason;
 }
 
 void RpcController::StartCancel()
@@ -35,20 +40,30 @@ void RpcController::StartCancel()
     // Todo
 }
 
-std::string RpcController::Reason() const
+const std::string& RpcController::RemoteReason() const
 {
-    return _reason;
+    return _remote_reason;
+}
+
+void RpcController::SetRemoteReason(std::string reason)
+{
+    _remote_reason = reason;
+}
+
+const std::string& RpcController::LocalReason() const
+{
+    return _local_reason;
 }
 
 void RpcController::SetFailed(const std::string& reason)
 {
-    _reason = reason;
+    _remote_reason = reason;
     _failed = true;
 }
 
 void RpcController::SetSuccess(const std::string& reason)
 {
-    _reason = reason;
+    _remote_reason = reason;
     _failed = false;
 }
 
@@ -108,16 +123,6 @@ ReadBufferPtr& RpcController::GetSendMessage()
     return _send_buf;
 }
 
-void RpcController::SetReceiveMessage(ReadBufferPtr receive_buf)
-{
-    _receive_buf = receive_buf;
-}
-
-ReadBufferPtr& RpcController::GetReceiveMessage()
-{
-    return _receive_buf;
-}
-
 const tcp::endpoint RpcController::GetRemoteEndPoint()
 {
     return _remote_endpoint;
@@ -143,14 +148,14 @@ void RpcController::StartTime()
 }
 
 // callback函数签名 void(RpcControllerPtr)
-void RpcController::PushDoneCallBack(callback func)
+void RpcController::SetDoneCallBack(callback func)
 {
     if(func == nullptr)
     {
         LOG(ERROR, "PushDoneCallBack(): callback func is null");
         return;
     }
-    _callback_queue.push(func);
+    _callback = func;
 }
 
 void RpcController::SetSequenceId(uint64_t id)
@@ -170,13 +175,12 @@ void RpcController::Done(std::string reason, bool failed)
     {
         return;
     }
-    _reason = reason;
+    _local_reason = reason;
     _failed = failed;
     _done.store(true);
-    while(!_callback_queue.empty()){
-        auto func = _callback_queue.top();
-        func(shared_from_this());
-        _callback_queue.pop();
+    if(_callback)
+    {
+        _callback(shared_from_this());
     }
 }
 

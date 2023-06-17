@@ -17,6 +17,7 @@ RpcServerStream::RpcServerStream(IoContext& ioc, const tcp::endpoint& endpoint)
 
 RpcServerStream::~RpcServerStream()
 {
+    LOG(DEBUG, "in ~RpcServerStream()");
     Close("rpc server stream destructed");
 }
 
@@ -38,6 +39,7 @@ void RpcServerStream::StartSend()
     }
     if(TrySend())
     {
+        ClearSendEnv();
         if(!GetItem())
         {
             LOG(DEBUG, "StartSend(): remote: [%s] the send buf queue is empty", EndPointToString(_remote_endpoint).c_str());
@@ -136,10 +138,12 @@ void RpcServerStream::OnReadHeader(const boost::system::error_code& ec, size_t b
     {
         if(ec == boost::asio::error::eof)
         {
-            LOG(ERROR, "OnReadHeader(): client has closed connection error msg: %s", ec.message().c_str());
+            LOG(ERROR, "OnReadHeader(): server: %s has closed connection error msg: %s", 
+                EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
             Close("client closed");
         }else{
-            LOG(ERROR, "OnReadHeader(): read proto header error error msg: %s", ec.message().c_str());
+            LOG(ERROR, "OnReadHeader(): server: %s read header error error msg: %s", 
+                EndPointToString(_remote_endpoint).c_str() ,ec.message().c_str());
             Close("read error");
         }
         return;
@@ -158,10 +162,10 @@ void RpcServerStream::OnReadBody(const boost::system::error_code& ec, size_t byt
     {
         if(ec == boost::asio::error::eof)
         {
-            LOG(ERROR, "OnReadBody(): client has closed connection, error msg: ", ec.message());
-            Close("client has closed");
+            LOG(ERROR, "OnReadHeader(): server: %s has closed connection error msg: %s", EndPointToString(_remote_endpoint), ec.message().c_str());
+            Close("client closed");
         }else{
-            LOG(ERROR, "OnReadBody(): read request body error, error msg: ", ec.message());
+            LOG(ERROR, "OnReadHeader(): server: %s read header error error msg: %s", EndPointToString(_remote_endpoint),ec.message().c_str());
             Close("read error");
         }
         return;
@@ -202,6 +206,12 @@ void RpcServerStream::ClearReceiveEnv()
     _receive_bytes = 0;
     _readbuf_ptr.reset(new ReadBuffer());
     NewBuffer();
+}
+
+void RpcServerStream::ClearSendEnv()
+{
+    _send_bytes = 0;
+    _sendbuf_ptr.reset();
 }
 
 void RpcServerStream::NewBuffer()

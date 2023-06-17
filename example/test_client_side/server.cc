@@ -51,16 +51,23 @@ public:
                        ::google::protobuf::Closure* done)
     {
         RpcController* cnt = dynamic_cast<RpcController*>(controller);
-        cnt->SetSuccess("Expand method is called sucesss");
         std::string str = request->request();
-        int times = request->times();
-        LOG(INFO, "Expand(): request message from: %s message: %s", 
+        int times;
+        if(request->has_times())
+        {
+            times = request->times();
+            cnt->SetSuccess("Expand method is called sucesss");
+            LOG(INFO, "Expand(): request message from: %s message: %s", 
             EndPointToString(cnt->GetRemoteEndPoint()).c_str(), str.c_str());
-        std::string ret;
-        while(times--){
-            ret += str;
+            std::string ret;
+            while(times--)
+            {
+                ret += str;
+            }
+            response->set_response(ret);
+        }else{
+            cnt->SetFailed("Expand method failed because expand times is not setted");
         }
-        response->set_response(ret);
         done->Run();
     }
 };

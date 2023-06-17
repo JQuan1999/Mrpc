@@ -9,6 +9,8 @@ using namespace test;
 using namespace mrpc;
 using namespace boost::asio::ip;
 
+int sequence_id = 0;
+
 bool CallMethod(boost::asio::io_context& ioc, tcp::socket& sock, std::string service, std::string method, std::string request_data, int times=-1)
 {
     Request request;
@@ -25,7 +27,7 @@ bool CallMethod(boost::asio::io_context& ioc, tcp::socket& sock, std::string ser
 
     RpcMeta meta;
     meta.set_type(RpcMeta::REQUEST); // 设置为request类型
-    meta.set_sequence_id(1); // 设置本次request id
+    meta.set_sequence_id(sequence_id++); // 设置本次request id
     meta.set_service(service);
     meta.set_method(method);
 
@@ -100,7 +102,7 @@ bool CallMethod(boost::asio::io_context& ioc, tcp::socket& sock, std::string ser
     {
         LOG(INFO, "call method failed error reason: %s", meta.reason().c_str());
     }else{
-        LOG(INFO, "call method success");
+        LOG(INFO, "call method success: seqenced id: %d", meta.sequence_id());
     }
 
     factor_size = 1;

@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+package test;
+
+option cc_generic_services = true;
+enum RequestType{
+    TOLOWER = 1;
+    TOUPPER = 2;
+    EXPAND = 3;
+}
+
+message Request{
+    
+    optional string request = 1;
+    optional RequestType type = 2;
+    optional int32 times = 3;
+}
+
+message Response{
+    optional string response = 1;
+}
+
+service UserService
+{
+    rpc Tolower(Request) returns(Response);
+    rpc ToUpper(Request) returns(Response);
+    rpc Expand(Request) returns(Response);
+}

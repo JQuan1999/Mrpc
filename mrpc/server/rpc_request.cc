@@ -105,17 +105,18 @@ void RpcRequest::CallBack(RpcController* controller)
     RpcServerStreamPtr stream = controller->GetSeverStream();
     if(controller->Failed())
     {
-        LOG(ERROR, "CallBack(): remote address :[%s] call method: %s:%s failed: %s", 
+        LOG(ERROR, "CallBack(): remote address :[%s] call method: %s:%s failed reason: %s", 
             EndPointToString(controller->GetRemoteEndPoint()).c_str(), 
             controller->GetServiceName().c_str(), controller->GetMethodName().c_str(),
-            controller->ErrorText().c_str());
-        SendFailedMessage(stream, controller->ErrorText()); // callmethod失败
-    }else
+            controller->RemoteReason().c_str());
+        SendFailedMessage(stream, controller->RemoteReason()); // callmethod失败
+    }
+    else
     {
-        LOG(DEBUG, "CallBack(): remote address :[%s] call method: %s:%s succed: %s", 
+        LOG(DEBUG, "CallBack(): remote address :[%s] call method: %s:%s succed reason: %s", 
             EndPointToString(controller->GetRemoteEndPoint()).c_str(), 
             controller->GetServiceName().c_str(), controller->GetMethodName().c_str(),
-            controller->ErrorText().c_str());
+            controller->RemoteReason().c_str());
         SendSuccedMessage(stream, controller); // callmethod成功
     }
 
@@ -129,7 +130,8 @@ void RpcRequest::SendFailedMessage(const RpcServerStreamPtr& stream, std::string
 {
     RpcMeta meta;
     meta.set_type(RpcMeta_Type_RESPONSE);
-    meta.set_sequence_id(-1);
+    int sequnce_id = _meta.has_sequence_id() ? _meta.sequence_id() : 0;
+    meta.set_sequence_id(sequnce_id);
     meta.set_failed(true);
     meta.set_reason(reason);
 
@@ -139,11 +141,12 @@ void RpcRequest::SendFailedMessage(const RpcServerStreamPtr& stream, std::string
     // 头部保留空间后面确定meta和response的大小后在保留位置写入header
     int header_size = sizeof(header);
     // pos为待写入的位置即writebuf已有字节数
-    int pos = writebuf->Reserve(header_size); 
+    int pos = writebuf->Reserve(header_size);
 
     if(!meta.SerializeToZeroCopyStream(writebuf.get()))
     {
-        LOG(ERROR, "SendFailedMessage() remote address: [%s] response meta serialize failed", EndPointToString(stream->GetRemote()).c_str());
+        LOG(ERROR, "SendFailedMessage() remote address: [%s] response meta serialize failed",
+            EndPointToString(stream->GetRemote()).c_str());
         stream->SendResponse(readbuf);
     }
     int meta_size = writebuf->ByteCount() - header_size - pos;
@@ -162,6 +165,7 @@ void RpcRequest::SendSuccedMessage(const RpcServerStreamPtr& stream, RpcControll
     meta.set_type(RpcMeta_Type_RESPONSE);
     meta.set_sequence_id(_meta.sequence_id());
     meta.set_failed(false);
+
     RpcHeader header;
     ReadBufferPtr readbuf(new ReadBuffer());
     WriteBufferPtr writebuf(new WriteBuffer());

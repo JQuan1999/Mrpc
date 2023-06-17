@@ -1,4 +1,4 @@
-SRC = test_service_pool.cc test_buffer.pb.cc ../common/logger.cc
+SRC = test_service_pool.cc
 TARGET = test_service_pool
 CXX_FLAGS = -g -W -Wall -O0
 INCLUDE = -I/home/ubuntu/Desktop
