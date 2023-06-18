@@ -7,8 +7,8 @@ PROTO_OBJ = test.pb.o
 PROTO_SRC = test.pb.cc
 PROTO_HEADER = test.pb.h
 
-CXX_FLAGS = -g -W -Wall -O0
-OUTPUT = /home/ubuntu/Desktop/mrpc/output
+CXX_FLAGS = -g -W -Wall -O2
+OUTPUT = ../../output
 INCLUDE = -I$(OUTPUT)/include
 CXX_FLAGS += $(INCLUDE)
 

@@ -1,29 +1,30 @@
 SRC = echo_client.cc echo_server.cc
 BIN = echo_client echo_server
+OBJ = echo_client.o echo_server.o
 
 PROTO = echo.proto
 PROTO_OBJ = echo.pb.o
 PROTO_SRC = echo.pb.cc
 PROTO_HEADER = echo.pb.h
 
-CXX_FLAGS = -g -W -Wall -O0
-OUTPUT = /home/ubuntu/Desktop/mrpc/output
+CXX_FLAGS = -g -W -Wall -O2 -fPIC
+OUTPUT = ../../output
 INCLUDE = -I$(OUTPUT)/include
 CXX_FLAGS += $(INCLUDE)
 
-LIB = -L$(OUTPUT)/lib/ -lgtest -lprotobuf -lboost_system -lmrpc -lpthread
+LIB = -L$(OUTPUT)/lib/ -lprotobuf -lboost_system -lmrpc -lpthread
 LDFLAGS += $(LIB)
 
 all: $(BIN)
 
-echo_client: $(PROTO_OBJ) echo_client.cc
-	g++ echo_client.cc $(PROTO_OBJ) -o $@ $(CXX_FLAGS) $(LDFLAGS)
+echo_client: $(PROTO_OBJ) echo_client.o
+	g++ $^ -o $@ $(LDFLAGS)
 
-echo_server: $(PROTO_OBJ) echo_server.cc
-	g++ echo_server.cc $(PROTO_OBJ) -o $@ $(CXX_FLAGS) $(LDFLAGS)
+echo_server: $(PROTO_OBJ) echo_server.o
+	g++ $^ -o $@ $(LDFLAGS)
 
-$(PROTO_OBJ): $(PROTO_SRC)
-	g++ -c $^ -o $@ $(CXX_FLAGS)
+%.o: %.cc
+	g++ $(CXX_FLAGS) -c $< -o $@
 
 %.pb.cc: %.proto
 	protoc --cpp_out=. $<

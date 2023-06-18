@@ -48,6 +48,7 @@ void RpcServer::Stop()
     {
         return;
     }
+    _quit = true;
     _is_running.store(false);
     _io_service_group->Stop();
     _io_service_group.reset();

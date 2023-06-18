@@ -8,7 +8,7 @@ PROTO_SRC = echo.pb.cc
 PROTO_HEADER = echo.pb.h
 
 CXX_FLAGS = -g -W -Wall -O0
-OUTPUT = /home/ubuntu/Desktop/mrpc/output
+OUTPUT = ../../output
 INCLUDE = -I$(OUTPUT)/include
 CXX_FLAGS += $(INCLUDE)
 

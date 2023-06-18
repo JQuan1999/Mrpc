@@ -23,11 +23,14 @@ public:
     }
 };
 
-int main()
+int main(int argc, char* argv[])
 {
-    MRPC_SET_LOG_LEVEL(DEBUG);
-    RpcServerPtr server_ptr(new RpcServer());
-    tcp::endpoint endpoint(address::from_string("127.0.0.1"), 12345);
+    MRPC_SET_LOG_LEVEL(INFO);
+    RpcServerOptions option;
+    option.work_thread_num = 8;
+
+    RpcServerPtr server_ptr(new RpcServer(option));
+    tcp::endpoint endpoint(tcp::v4(), 12345);
     EchoServiceImpl* impl = new EchoServiceImpl();
 
     server_ptr->Start(endpoint);

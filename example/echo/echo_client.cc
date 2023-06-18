@@ -44,15 +44,20 @@ void LastCallBack(RpcControllerPtr cnt, bool* flag)
     delete response;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    MRPC_SET_LOG_LEVEL(DEBUG);
+    MRPC_SET_LOG_LEVEL(INFO);
+    if(argc != 3)
+    {
+        LOG(INFO, "Usage: ./echo_client ip port");
+        return -1;
+    }
     RpcClientOptions option;
     option.work_thread_num = 4;
 
     RpcClientPtr client(new RpcClient(option));
-    std::string address = "127.0.0.1";
-    int port = 12345;
+    std::string address = std::string(argv[1]);
+    int port = atoi(argv[2]);
     SimpleChannelPtr channel(new RpcSimpleChannel(client, address, port));
     EchoServer_Stub stub(channel.get());
 
@@ -76,7 +81,7 @@ int main()
     // coredump NewCallback传RpcControllerPtr&会coredump
     clock_t start = clock();
     bool flag = false;
-    int count = 100;
+    int count = 10000;
     while(client->GetSequenceId() < count)
     {
         cnt.reset(new RpcController());
