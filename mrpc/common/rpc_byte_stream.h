@@ -29,12 +29,12 @@ public:
         , _send_factor_size(SEND_FACTOR_SIZE)
         , _status(SOCKET_CLOSED)
     {
-
+        LOG(DEBUG, "in RpcByteStream() address: %p", this);
     }
 
     virtual ~RpcByteStream()
     {
-        LOG(DEBUG, "in ~RpcByteStream()");
+        LOG(DEBUG, "in ~RpcByteStream() address: %p", this);
         _socket.close();
     }
 

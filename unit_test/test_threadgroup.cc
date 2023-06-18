@@ -74,8 +74,7 @@ TEST(ThreadGroup, dispatch)
     group.Dispatch(std::bind(SetTrue, &flag1));
     google::protobuf::Closure* func = google::protobuf::NewCallback<bool*>(SetFalse, &flag2);
     group.Dispatch(func);
-    group.Stop();
-
+    usleep(100);
     EXPECT_EQ(flag1, true);
     EXPECT_EQ(flag2, false);
 }

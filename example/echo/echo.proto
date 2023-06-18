@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package EchoTest;
+
+option cc_generic_services = true;
+
+message EchoRequest
+{
+    optional string request = 1;
+}
+
+message EchoResponse
+{
+    optional string response = 1;
+}
+
+service EchoServer
+{
+    rpc Echo(EchoRequest) returns(EchoResponse);
+}

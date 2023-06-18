@@ -42,7 +42,6 @@ void RpcServerStream::StartSend()
         ClearSendEnv();
         if(!GetItem())
         {
-            LOG(DEBUG, "StartSend(): remote: [%s] the send buf queue is empty", EndPointToString(_remote_endpoint).c_str());
             FreeSendingFlag();
             return;
         }
@@ -138,7 +137,7 @@ void RpcServerStream::OnReadHeader(const boost::system::error_code& ec, size_t b
     {
         if(ec == boost::asio::error::eof)
         {
-            LOG(ERROR, "OnReadHeader(): server: %s has closed connection error msg: %s", 
+            LOG(INFO, "OnReadHeader(): server: %s has closed connection error msg: %s", 
                 EndPointToString(_remote_endpoint).c_str(), ec.message().c_str());
             Close("client closed");
         }else{

@@ -16,7 +16,6 @@ RpcClientStream::RpcClientStream(IoContext& ioc, const tcp::endpoint& endpoint)
 
 RpcClientStream::~RpcClientStream()
 {
-    LOG(DEBUG, "in ~RpcClientStream()");
     Close("rpc stream destructed");
 }
 
@@ -45,7 +44,6 @@ void RpcClientStream::StartSend()
         ClearSendEnv();
         if(!GetItem())
         {
-            LOG(DEBUG, "StartSend(): the send buf queue is empty");
             FreeSendingFlag();
             return;
         }

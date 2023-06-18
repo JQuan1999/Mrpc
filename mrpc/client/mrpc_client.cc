@@ -157,10 +157,15 @@ RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
     }
 }
 
+uint64_t RpcClient::GetSequenceId()
+{
+    return _next_request_id.load();
+}
+
 uint64_t RpcClient::GenerateSequenceId()
 {
     ++_next_request_id;
-    return _next_request_id;
+    return _next_request_id.load();
 }
 
 }

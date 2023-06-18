@@ -65,6 +65,8 @@ public:
                     google::protobuf::Message* response,
                     RpcController* crt);
 
+    uint64_t GetSequenceId();
+
     uint64_t GenerateSequenceId();
 
 private:
@@ -75,11 +77,9 @@ private:
     void EraseStream(const RpcClientStreamPtr& stream);
 
     RpcClientStreamPtr FindOrCreateStream(const tcp::endpoint& endpoint);
-    
-    void DoneCallBack(google::protobuf::Message* response, const RpcControllerPtr& crt);
 
 private:
-    uint64_t _next_request_id; // 表示client下一个request_id Todo原子变量
+    std::atomic<uint64_t> _next_request_id; // 表示client下一个发送消息的序列号
     std::atomic<bool> _is_running;
     std::mutex _stream_map_mutex;
     std::map<tcp::endpoint, RpcClientStreamPtr> _stream_map; // endpoint对应一个stream连接

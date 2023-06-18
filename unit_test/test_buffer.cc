@@ -4,7 +4,7 @@
 #include <string>
 #include <mrpc/proto/rpc_header.h>
 #include <mrpc/proto/rpc_meta.pb.h>
-#include <mrpc/unit_test/test_buffer.pb.h>
+#include "test_buffer.pb.h"
 using namespace mrpc;
 
 char* RandStr(char* str, int len)
