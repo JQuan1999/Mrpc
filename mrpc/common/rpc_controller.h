@@ -40,6 +40,10 @@ public:
     virtual void StartCancel();
 
     // client-side method
+    void SetTimeout(int time);
+
+    int GetTimeout();
+    
     const std::string& RemoteReason() const;
 
     void SetRemoteReason(std::string);
@@ -113,6 +117,7 @@ private:
     std::mutex _mutex;
     std::condition_variable _cond;
     ReadBufferPtr _send_buf;
+    int _timeout;
 
     // server
     RpcServerStreamPtr _server_stream;

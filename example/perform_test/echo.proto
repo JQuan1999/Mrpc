@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package PerfTest;
+
+option cc_generic_services = true;
+
+message Request{
+    required string req = 1;
+}
+
+message Response{
+    required string res = 1;
+}
+
+service EchoService{
+    rpc Echo(Request) returns(Response);
+}

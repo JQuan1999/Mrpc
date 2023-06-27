@@ -21,13 +21,14 @@ public:
     RpcByteStream(IoContext& ioc, const tcp::endpoint& endpoint)
         : _ioc(ioc)
         , _socket(_ioc)
-        , _remote_endpoint(endpoint)
-        , _local_endpoint(endpoint)
+        , _status(SOCKET_CLOSED)
         , _receiving(false)
         , _sending(false)
+        , _remote_endpoint(endpoint)
+        , _local_endpoint(endpoint)
+        , _no_delay(false)
         , _receive_factor_size(REVEIVE_FACTOR_SIZE)
         , _send_factor_size(SEND_FACTOR_SIZE)
-        , _status(SOCKET_CLOSED)
     {
         LOG(DEBUG, "in RpcByteStream() address: %p", this);
     }
@@ -36,6 +37,11 @@ public:
     {
         LOG(DEBUG, "in ~RpcByteStream() address: %p", this);
         _socket.close();
+    }
+
+    void SetNoDelay(bool no_delay)
+    {
+        _no_delay = no_delay;
     }
 
     void Close(const std::string msg)
@@ -79,7 +85,13 @@ public:
     // uesd by server
     void SetConnected()
     {
-        // Todo 设置no_delay
+        boost::system::error_code ec;
+        _socket.set_option(tcp::no_delay(_no_delay), ec);
+        if(ec){
+            LOG(ERROR, "SetConnected() failed: %s", ec.message().c_str());
+            Close("init stream failed: "+ec.message());
+            return;
+        }
         _status.store(SOCKET_CONNECTED);
         StartReceive();
         StartSend();
@@ -90,7 +102,7 @@ public:
     {
         _status.store(SOCKET_CONNECTING);
         _socket.async_connect(_remote_endpoint, std::bind(&RpcByteStream::OnConnect, shared_from_this(), std::placeholders::_1));
-        // Todo 添加定时器
+        // Todo 添加connect定时器
     }
 
     // common
@@ -217,19 +229,6 @@ private:
         }
     }
 
-protected:
-    std::mutex _sending_mutex;
-    std::atomic<bool> _sending;
-
-    std::atomic<bool> _receiving;
-    std::mutex _receiving_mutex;
-
-    tcp::endpoint _local_endpoint;
-    tcp::endpoint _remote_endpoint;
-    IoContext& _ioc;
-    int _receive_factor_size;
-    int _send_factor_size;
-
 private:
     enum SOCKET_STATUS{
         SOCKET_INIT = 0,
@@ -237,9 +236,21 @@ private:
         SOCKET_CONNECTED = 2,
         SOCKET_CLOSED = 3
     };
-    // async_connect超时设置
-    std::atomic<SOCKET_STATUS> _status;
+    IoContext& _ioc;
     tcp::socket _socket;
+    std::atomic<SOCKET_STATUS> _status;
+
+protected:
+    std::mutex _sending_mutex;
+    std::atomic<bool> _receiving;
+    std::atomic<bool> _sending;
+    std::mutex _receiving_mutex;
+
+    tcp::endpoint _remote_endpoint;
+    tcp::endpoint _local_endpoint;
+    bool _no_delay;
+    int _receive_factor_size;
+    int _send_factor_size;
 };
 
 }

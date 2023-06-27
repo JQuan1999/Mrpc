@@ -3,7 +3,7 @@
 namespace mrpc
 {
 
-ThreadGroup::ThreadGroup(int thread_num, std::string name, ThreadFunc init_func, ThreadFunc end_func)
+ThreadGroup::ThreadGroup(int thread_num, std::string name, FuncType init_func, FuncType end_func)
     : _ioc()
     , _work(_ioc)
     , _thread_num(thread_num)

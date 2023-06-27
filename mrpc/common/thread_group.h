@@ -15,14 +15,15 @@ class ThreadGroup;
 typedef std::shared_ptr<ThreadGroup> ThreadGroupPtr;
 
 typedef std::function<void()> ThreadFunc;
+typedef void(*FuncType)();
 
 struct ThreadParam
 {
     int id; // 线程id
-    ThreadFunc init_func; // 线程初始化函数
-    ThreadFunc end_func; // 线程结束函数
+    FuncType init_func; // 线程初始化函数
+    FuncType end_func; // 线程结束函数
     IoContext& ioc;
-    ThreadParam(int p_id, ThreadFunc p_init_func, ThreadFunc p_end_func, IoContext& p_ioc)
+    ThreadParam(int p_id, FuncType p_init_func, FuncType p_end_func, IoContext& p_ioc)
         : id(p_id)
         , init_func(p_init_func)
         , end_func(p_end_func)
@@ -34,7 +35,7 @@ struct ThreadParam
 class ThreadGroup
 {
 public:
-    ThreadGroup(int thread_num = 2, std::string name = "", ThreadFunc init_func = nullptr, ThreadFunc end_func = nullptr);
+    ThreadGroup(int thread_num = 2, std::string name = "", FuncType init_func = nullptr, FuncType end_func = nullptr);
 
     ~ThreadGroup();
     
@@ -68,8 +69,8 @@ private:
     boost::asio::io_context _ioc;
     boost::asio::io_context::work _work;
     std::vector<std::thread> _threads;
-    ThreadFunc _init_func;
-    ThreadFunc _end_func;
+    FuncType _init_func;
+    FuncType _end_func;
 };
 
 } // namespace mrpc

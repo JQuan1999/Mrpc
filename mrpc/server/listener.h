@@ -112,7 +112,7 @@ private:
 
         if(ec)
         {
-            LOG(ERROR, "OnAccept(): async accpet error: %s", EndPointToString(_endpoint).c_str());
+            LOG(ERROR, "OnAccept(): async accpet error: %s", ec.message().c_str());
             Stop();
             return;
         }

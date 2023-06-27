@@ -76,12 +76,10 @@ int main(int argc, char* argv[])
     }
     delete request;
     delete response;
-
-    // callmethod2 10000次异步调用
+    // callmethod2 10次异步调用
     // coredump NewCallback传RpcControllerPtr&会coredump
-    clock_t start = clock();
     bool flag = false;
-    int count = 10000;
+    int count = 10;
     while(client->GetSequenceId() < count)
     {
         cnt.reset(new RpcController());
@@ -102,9 +100,6 @@ int main(int argc, char* argv[])
     {
         usleep(100);
     }
-    clock_t end = clock();
-    double seconds = (double)(end - start) / CLOCKS_PER_SEC;
-    LOG(INFO, "run time is: %.8f", seconds);
     client->Stop();
     return 0;
 }

@@ -21,10 +21,10 @@ RpcClientStream::~RpcClientStream()
 
 void RpcClientStream::CallMethod(const RpcControllerPtr& cnt)
 {
-    if(!IsConnected())
+    if(IsClosed())
     {
-        LOG(ERROR, "CallMethod(): socket is not connected: %s", EndPointToString(_remote_endpoint).c_str());
-        cnt->Done("socket is not connected", true);
+        LOG(ERROR, "CallMethod(): remote: %s socket is closed ", EndPointToString(_remote_endpoint).c_str());
+        cnt->Done("socket is closed", true);
         return;
     }
     AddRequest(cnt);
@@ -39,6 +39,10 @@ void RpcClientStream::SetCloseCallback(callback close_callback)
 
 void RpcClientStream::StartSend()
 {
+    if(!IsConnected())
+    {
+        return;
+    }
     if(TrySend())
     {
         ClearSendEnv();
@@ -81,7 +85,7 @@ void RpcClientStream::OnWrite(const boost::system::error_code& ec, size_t bytes)
     }
     if(bytes < _send_bytes)
     {
-        _send_data += bytes;
+        _send_data = (char*)_send_data + bytes;
         _send_bytes -= bytes;
         AsyncWrite((char*)_send_data, _send_bytes); // 当前数据块未发送完 继续发送剩余数据
         return;
@@ -107,7 +111,7 @@ void RpcClientStream::OnClose(std::string reason)
     std::lock_guard<std::mutex> lock(_controller_map_mutex);
     for(auto& p: _controller_map)
     {
-        p.second->Done(reason, false);
+        p.second->Done(reason, true);
     }
     if(_close_callback)
     {
@@ -142,7 +146,6 @@ void RpcClientStream::StartReceive()
 {
     if(!IsConnected())
     {
-        LOG(ERROR, "StartReceive(): remote: %s is not connected", EndPointToString(_remote_endpoint).c_str());
         return;
     }
     if(TryReceive())
@@ -168,7 +171,6 @@ void RpcClientStream::OnReadHeader(const boost::system::error_code& ec, size_t b
     }
     else
     {
-        int res_data_size = _header.message_size - _receive_bytes; // 剩余数据大小
         int read_size = std::min(_receive_data.GetSpace(), _header.message_size); // 可以读取的数据大小
         AsyncReadBody(_receive_data.GetHeader(), read_size);
     }
@@ -269,10 +271,12 @@ void RpcClientStream::OnReceived(ReadBufferPtr readbuf)
         {
             cnt->SetRemoteReason(meta.reason());
             cnt->Done("", true);
+            return;
         }
         else
         {
             cnt->Done("request maybe failed but reason is not set", true);
+            return;
         }
     }
 
@@ -283,10 +287,12 @@ void RpcClientStream::OnReceived(ReadBufferPtr readbuf)
     {
         LOG(ERROR, "OnReceived(): reomte: [%s] parse response message failed", EndPointToString(_remote_endpoint).c_str());
         cnt->Done("parse response message failed", true);
+        return;
     }
     else
     {
         cnt->Done("callmethod success", false);
+        return;
     }
 }
 

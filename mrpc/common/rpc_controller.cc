@@ -4,6 +4,7 @@ namespace mrpc{
 
 RpcController::RpcController()
     : _failed(false)
+    , _timeout(0)
     , _is_sync(false)
     , _done(false)
     , _callback(nullptr)
@@ -38,6 +39,16 @@ std::string RpcController::ErrorText() const
 void RpcController::StartCancel()
 {
     // Todo
+}
+
+void RpcController::SetTimeout(int time)
+{
+    _timeout = time;
+}
+
+int RpcController::GetTimeout()
+{
+    return _timeout;
 }
 
 const std::string& RpcController::RemoteReason() const
@@ -140,11 +151,6 @@ void RpcController::Wait()
 void RpcController::Signal()
 {
     _cond.notify_one(); // 唤醒阻塞的线程
-}
-
-void RpcController::StartTime()
-{
-    // Todo
 }
 
 // callback函数签名 void(RpcControllerPtr)

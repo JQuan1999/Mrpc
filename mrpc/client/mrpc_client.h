@@ -13,6 +13,7 @@
 #include<mrpc/proto/rpc_header.h>
 #include<mrpc/proto/rpc_meta.pb.h>
 #include<mrpc/client/rpc_client_stream.h>
+#include<mrpc/common/timeout_manager.h>
 
 namespace mrpc{
 
@@ -22,9 +23,11 @@ struct RpcClientOptions
 
     int callback_thread_num; // 回调函数线程数目
 
-    ThreadFunc init_func;
-    
-    ThreadFunc end_func;
+    int timer_thread_num; // 定时线程数目
+
+    FuncType init_func; // 初始化函数
+
+    FuncType end_func; // 结束函数
 
     int keep_alive_time; // 保持连接的时间 超过这个时间未进行读写就关闭
 
@@ -35,6 +38,7 @@ struct RpcClientOptions
     RpcClientOptions()
         : work_thread_num(4)
         , callback_thread_num(1)
+        , timer_thread_num(1)
         , init_func(nullptr)
         , end_func(nullptr)
         , keep_alive_time(-1)
@@ -79,14 +83,15 @@ private:
     RpcClientStreamPtr FindOrCreateStream(const tcp::endpoint& endpoint);
 
 private:
+    RpcClientOptions _option;
     std::atomic<uint64_t> _next_request_id; // 表示client下一个发送消息的序列号
     std::atomic<bool> _is_running;
     std::mutex _stream_map_mutex;
     std::map<tcp::endpoint, RpcClientStreamPtr> _stream_map; // endpoint对应一个stream连接
-    RpcClientOptions _option;
+    TimeoutManagerPtr _timeout_ptr;
+    ThreadGroupPtr _timer_thread_group;
     ThreadGroupPtr _work_thread_group;
     ThreadGroupPtr _callback_group;
-    // ThreadGroupPtr _main_group; // 超时管理线程组
 };
 }
 

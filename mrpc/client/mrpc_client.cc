@@ -1,11 +1,12 @@
 #include<mrpc/client/mrpc_client.h>
 
-namespace mrpc{
+namespace mrpc
+{
 
 RpcClient::RpcClient(RpcClientOptions option)
     : _option(option)
-    , _is_running(false)
     , _next_request_id(0)
+    , _is_running(false)
 {
     Start();
 }
@@ -23,7 +24,14 @@ void RpcClient::Start()
         return;
     }
     _is_running.store(true);
+
+    _timer_thread_group.reset(new ThreadGroup(_option.timer_thread_num, "timer_thread_group", _option.init_func, _option.end_func));
+
+    _timeout_ptr.reset(new TimeoutManager(_timer_thread_group->GetService()));
+    _timeout_ptr->Start();
+    
     _work_thread_group.reset(new ThreadGroup(_option.work_thread_num, "client_work_thread_group", _option.init_func, _option.end_func));
+    
     _callback_group.reset(new ThreadGroup(_option.callback_thread_num, "client_callback_thread_group", _option.init_func, _option.end_func));
 }
 
@@ -51,10 +59,13 @@ void RpcClient::Stop()
         }
         _stream_map.clear();
     }
+    _timer_thread_group->Stop();
+    _timer_thread_group.reset();
+    _timeout_ptr->Stop();
+    _timeout_ptr.reset();
     _work_thread_group->Stop();
-    _callback_group->Stop();
-    // 将指针置空
     _work_thread_group.reset();
+    _callback_group->Stop();
     _callback_group.reset();
 }
 
@@ -115,7 +126,10 @@ void RpcClient::CallMethod(const google::protobuf::Message* request,
 
     cnt->SetSendMessage(readbuf);
     cnt->SetResponse(response);
-
+    if(cnt->GetTimeout() > 0)
+    {
+        _timeout_ptr->Add(cnt->shared_from_this());
+    }
     // 3. 调用stream将数据发送给server端
     stream_ptr->CallMethod(cnt->shared_from_this());
 }
@@ -138,6 +152,7 @@ void RpcClient::EraseStream(const RpcClientStreamPtr& stream)
     _stream_map.erase(endpoint);
 }
 
+// 找到endpoint对应的stream或创建新的stream并保存在map中
 RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
 {
     std::lock_guard<std::mutex> lock(_stream_map_mutex);
@@ -148,11 +163,10 @@ RpcClientStreamPtr RpcClient::FindOrCreateStream(const tcp::endpoint& endpoint)
     else
     {
         RpcClientStreamPtr stream = std::make_shared<RpcClientStream>(_work_thread_group->GetService(), endpoint);
+        stream->SetNoDelay(_option.no_delay);
         stream->SetCloseCallback(std::bind(&RpcClient::EraseStream, shared_from_this(), std::placeholders::_1));
         _stream_map[endpoint] = stream;
-        // 建立连接
         stream->AsyncConnect();
-        usleep(100);
         return stream;
     }
 }

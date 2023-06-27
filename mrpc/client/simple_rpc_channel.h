@@ -39,6 +39,8 @@ public:
     // 还未完成的调用数量
     virtual uint32_t WaitCount();
 
+    bool ResovleSuccess();
+
 public:
     void WaitDone(RpcController* crt);
 

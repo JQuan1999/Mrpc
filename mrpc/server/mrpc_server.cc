@@ -17,19 +17,29 @@ RpcServer::~RpcServer()
     Stop();
 }
 
-void RpcServer::Start(const tcp::endpoint& endpoint)
+bool RpcServer::Start(const std::string& ip, uint32_t port)
 {
-    if(_is_running.load() == true)
+    if(_is_running == true)
     {
-        return;
+        return false;
     }
-    _is_running.store(true);
+    _is_running = true;
     _io_service_group.reset(new ThreadGroup(_option.work_thread_num, "io server thread group", _option.init_func, _option.end_func));
-    
-    _listener_ptr.reset(new Listener(_io_service_group->GetService(), endpoint));
+
+    if(!ResovleAddress(_io_service_group->GetService(), ip, port, &_listen_endpoint))
+    {
+        LOG(ERROR, "Start(): resovle address:%s port:%d failed", ip.c_str(), port);
+        _io_service_group->Stop();
+        _is_running = false;
+        return false;
+    }
+
+    _listener_ptr.reset(new Listener(_io_service_group->GetService(), _listen_endpoint));
     _listener_ptr->SetAcceptCallback(std::bind(&RpcServer::OnAccept, shared_from_this(), std::placeholders::_1));
     _listener_ptr->SetCreateCallback(std::bind(&RpcServer::OnCreate, shared_from_this(), std::placeholders::_1));
     _listener_ptr->StartListen();
+    
+    return true;
 }
 
 void RpcServer::Run()

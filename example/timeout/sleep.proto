@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package TimeoutTest;
+
+option cc_generic_services = true;
+
+message Request{
+    optional int32 sleep_time = 1;
+};
+
+message Response{
+    optional int32 return_time = 1;
+};
+
+service SleepService{
+    rpc Sleep(Request) returns(Response);
+}

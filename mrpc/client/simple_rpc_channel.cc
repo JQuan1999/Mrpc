@@ -94,7 +94,6 @@ void RpcSimpleChannel::CallMethod(const google::protobuf::MethodDescriptor* meth
     }
 
     cnt->SetRemoteEndPoint(_remote_endpoint);
-    cnt->StartTime(); // ToDo设置开始时间 超时管理
     _client_ptr->CallMethod(request, response, cnt);
     WaitDone(cnt);
 }
@@ -102,6 +101,11 @@ void RpcSimpleChannel::CallMethod(const google::protobuf::MethodDescriptor* meth
 uint32_t RpcSimpleChannel::WaitCount()
 {
     return _wait_count.load();
+}
+
+bool RpcSimpleChannel::ResovleSuccess()
+{
+    return _is_mock || _resolve_success;
 }
 
 // 同步调用阻塞等待完成

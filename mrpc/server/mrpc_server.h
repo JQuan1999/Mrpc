@@ -20,14 +20,16 @@ namespace mrpc{
 struct RpcServerOptions
 {
     int work_thread_num;
-    ThreadFunc init_func;
-    ThreadFunc end_func;
-    
-    RpcServerOptions():
-    work_thread_num(4),
-    init_func(nullptr),
-    end_func(nullptr)
-    {}
+    FuncType init_func;
+    FuncType end_func;
+
+    RpcServerOptions()
+        : work_thread_num(4)
+        , init_func(nullptr)
+        , end_func(nullptr)
+    {
+        
+    }
 };
 
 class RpcServer;
@@ -39,8 +41,8 @@ public:
     RpcServer(RpcServerOptions option = RpcServerOptions());
 
     ~RpcServer();
-    
-    void Start(const tcp::endpoint& endpoint);
+
+    bool Start(const std::string& ip, uint32_t port);
     
     void Stop();
 
@@ -61,6 +63,7 @@ private:
 
 private:
     static bool _quit;
+    tcp::endpoint _listen_endpoint;
     ListenerPtr _listener_ptr;
     ServicePoolPtr _service_pool;
     std::atomic<bool> _is_running;
