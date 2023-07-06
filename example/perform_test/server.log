@@ -1,0 +1,54 @@
+[mrpc INFO 2093/07/06-06:54:03.242631 7fb5f325b700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [1] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.242542 7fb5f2a5a700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [2] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.243249 7fb5f0a56700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [6] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.243247 7fb5f1a58700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [4] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.242774 7fb5f2259700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [3] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.243599 7fb5ebfff700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [7] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.243798 7fb5f325f780 mrpc/common/thread_group.cc:41] Start(): thread group [io server thread group] started, thread num = 8
+[mrpc INFO 2093/07/06-06:54:03.243814 7fb5eb7fe700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [8] is started successfully
+[mrpc INFO 2093/07/06-06:54:03.244245 7fb5f325f780 ./mrpc/server/listener.h:75] StartListen(): listen succeed: 127.0.0.1:12345
+[mrpc INFO 2093/07/06-06:54:03.243234 7fb5f1257700 mrpc/common/thread_group.cc:90] ThreadRun(): thread id: [5] is started successfully
+[mrpc INFO 2093/07/06-06:54:04.248553 7fb5f325b700 mrpc/server/mrpc_server.cc:92] OnAccept(): accept connect from: [127.0.0.1:45006]
+[mrpc INFO 2093/07/06-06:54:04.256959 7fb5f325f780 echo_server.cc:76] QPS=144
+[mrpc INFO 2093/07/06-06:54:05.252691 7fb5eb7fe700 mrpc/server/mrpc_server.cc:92] OnAccept(): accept connect from: [127.0.0.1:45010]
+[mrpc INFO 2093/07/06-06:54:05.259473 7fb5f325f780 echo_server.cc:76] QPS=7244
+[mrpc INFO 2093/07/06-06:54:06.262182 7fb5f325f780 echo_server.cc:76] QPS=22814
+[mrpc INFO 2093/07/06-06:54:07.265050 7fb5f325f780 echo_server.cc:76] QPS=19665
+[mrpc INFO 2093/07/06-06:54:08.266827 7fb5f325f780 echo_server.cc:76] QPS=21688
+[mrpc INFO 2093/07/06-06:54:09.268891 7fb5f325f780 echo_server.cc:76] QPS=22180
+[mrpc INFO 2093/07/06-06:54:10.270805 7fb5f325f780 echo_server.cc:76] QPS=23385
+[mrpc INFO 2093/07/06-06:54:11.272771 7fb5f325f780 echo_server.cc:76] QPS=19634
+[mrpc INFO 2093/07/06-06:54:12.274807 7fb5f325f780 echo_server.cc:76] QPS=13973
+[mrpc INFO 2093/07/06-06:54:13.276686 7fb5f325f780 echo_server.cc:76] QPS=21403
+[mrpc INFO 2093/07/06-06:54:14.278700 7fb5f325f780 echo_server.cc:76] QPS=20360
+[mrpc INFO 2093/07/06-06:54:15.281035 7fb5f325f780 echo_server.cc:76] QPS=17668
+[mrpc INFO 2093/07/06-06:54:16.283112 7fb5f325f780 echo_server.cc:76] QPS=19709
+[mrpc INFO 2093/07/06-06:54:17.285050 7fb5f325f780 echo_server.cc:76] QPS=22808
+[mrpc INFO 2093/07/06-06:54:18.286843 7fb5f325f780 echo_server.cc:76] QPS=21144
+[mrpc INFO 2093/07/06-06:54:19.288672 7fb5f325f780 echo_server.cc:76] QPS=21541
+[mrpc INFO 2093/07/06-06:54:20.290757 7fb5f325f780 echo_server.cc:76] QPS=22377
+[mrpc INFO 2093/07/06-06:54:21.292752 7fb5f325f780 echo_server.cc:76] QPS=19875
+[mrpc INFO 2093/07/06-06:54:22.294489 7fb5f325f780 echo_server.cc:76] QPS=19438
+[mrpc INFO 2093/07/06-06:54:23.296223 7fb5f325f780 echo_server.cc:76] QPS=23643
+[mrpc INFO 2093/07/06-06:54:24.299082 7fb5f325f780 echo_server.cc:76] QPS=20588
+[mrpc INFO 2093/07/06-06:54:25.301533 7fb5f325f780 echo_server.cc:76] QPS=23831
+[mrpc INFO 2093/07/06-06:54:26.303628 7fb5f325f780 echo_server.cc:76] QPS=20267
+[mrpc INFO 2093/07/06-06:54:27.305174 7fb5f325f780 echo_server.cc:76] QPS=20263
+[mrpc INFO 2093/07/06-06:54:28.307120 7fb5f325f780 echo_server.cc:76] QPS=19249
+[mrpc INFO 2093/07/06-06:54:29.309529 7fb5f325f780 echo_server.cc:76] QPS=20054
+[mrpc INFO 2093/07/06-06:54:30.311494 7fb5f325f780 echo_server.cc:76] QPS=18357
+[mrpc INFO 2093/07/06-06:54:31.313337 7fb5f325f780 echo_server.cc:76] QPS=13830
+[mrpc INFO 2093/07/06-06:54:32.316515 7fb5f325f780 echo_server.cc:76] QPS=21739
+[mrpc INFO 2093/07/06-06:54:33.318050 7fb5f325f780 echo_server.cc:76] QPS=22574
+[mrpc INFO 2093/07/06-06:54:34.319594 7fb5f325f780 echo_server.cc:76] QPS=19919
+[mrpc INFO 2093/07/06-06:54:35.321483 7fb5f325f780 echo_server.cc:76] QPS=18549
+[mrpc INFO 2093/07/06-06:54:36.323310 7fb5f325f780 echo_server.cc:76] QPS=18126
+[mrpc INFO 2093/07/06-06:54:37.325350 7fb5f325f780 echo_server.cc:76] QPS=21500
+[mrpc INFO 2093/07/06-06:54:38.326868 7fb5f325f780 echo_server.cc:76] QPS=19087
+[mrpc INFO 2093/07/06-06:54:39.328775 7fb5f325f780 echo_server.cc:76] QPS=22493
+[mrpc INFO 2093/07/06-06:54:40.330580 7fb5f325f780 echo_server.cc:76] QPS=23001
+[mrpc INFO 2093/07/06-06:54:41.332196 7fb5f325f780 echo_server.cc:76] QPS=22776
+[mrpc INFO 2093/07/06-06:54:41.806856 7fb5f325f780 mrpc/common/thread_group.cc:53] Stop(): thread group [io server thread group] stopped
+[mrpc INFO 2093/07/06-06:54:41.807160 7fb5f325f780 ./mrpc/server/listener.h:90] Stop(): listener stoped: 127.0.0.1:12345
+[mrpc INFO 2093/07/06-06:54:41.807214 7fb5f325f780 ./mrpc/common/rpc_byte_stream.h:55] close(): remote: [127.0.0.1:45006] connection closed: RpcServer destructed
+[mrpc INFO 2093/07/06-06:54:41.807473 7fb5f325f780 ./mrpc/common/rpc_byte_stream.h:55] close(): remote: [127.0.0.1:45010] connection closed: RpcServer destructed

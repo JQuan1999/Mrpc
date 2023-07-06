@@ -92,7 +92,6 @@ int main(int argc, char* argv[])
     RpcClientOptions option;
     option.work_thread_num = 4;
     option.callback_thread_num = 4;
-    option.no_delay = false;
     RpcClientPtr client(new RpcClient(option));
     SimpleChannelPtr channel(new RpcSimpleChannel(client, host, port));
     if(!channel->ResovleSuccess())
