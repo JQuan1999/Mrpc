@@ -2,12 +2,35 @@
 1. 主要内容：基于异步网络通信库Boost::asio和序列化框架Protobuf实现的轻量级Rpc框架
 
 2. 主要特性：
-    - 支持同步和异步调用
-    - 支持解析自定义协议和http协议
-    - 支持超时管理灵活控制请求时间
-    - 离散的读写缓冲区可以减少内存拷贝
-    - 支持Mock测试
-    - 经过大量测试验证了可靠性和稳定性，在4G2核虚拟机上Qps2w+
+
+    - 支持同步和异步调用：在rpc调用前设置回调函数`done`即为异步调用，`done`为null即为同步调用，同步调用在调用结果返回前，将阻塞在`RpcChannle::CallMethod`，异步调用将`done`加入回调函数线程组异步执行。
+
+    - 支持解析自定义协议和http协议：根据协议的头四个字节区分`Get`,`Post`,自定义协议，然后调用对应的方法进行解析。HTTP解析状态机，自定义协议解析先获取协议头部，再根据头部的`meta_size`和`data_size`解析meta信息和data信息。
+
+    - 支持超时管理灵活控制请求时间：在Rpc调用前设置`RpcController`的超时时间，如果设置了超时时间将`RpcController`加入超时管理类，超时管理类里面维护了一个`Item`结构体的小根堆
+    ```
+        struct Item{
+            long long expire_time;
+            RpcControllerPtr cnt_;
+            Item(long long time = 0, const RpcControllerPtr& cnt = nullptr)
+                : expire_time(time)
+                , cnt_(cnt)
+            {
+
+            }
+            bool operator<(const Item& item) const 
+            {
+                return this->expire_time > item.expire_time;
+            }
+        };
+    ```
+    以`ROUTE_TIME`微秒为周期进行检查，当从小根堆里面取出超时的`Item`，当`RpcController`未调用`Done`函数时，将提前结束Rpc调用并设置错误为timeout(未解决的问题：可能存在多个线程对`RpcController`调用`Done`出现未定义的行为，解决办法将`Done`设置为线程安全的函数)。
+
+    - 离散的读写缓冲区可以减少内存拷贝：Writebuf继承`google::protobuf::io::ZeroCopyOutputStream`可以分配*多块离散的内存*给protobuf message直到填满为止，可以减少内存拷贝(因为不能一开始就保证需要的目标内存有多大，这意味着不能一次性分配足够的内存空间给protobuf message序列化，可能需要将多块小内存拷贝到一块大内存中)，Writebuf包含多块小内存`Buffer`，brpc采用`ptr= malloc(size+2)`的内寸将，`ptr`设置为引用计数，`ptr+1`设置为size，返回`ptr+2`作为申请的内存地址，而我采用了在`Buffer`内维护一个`share_ptr<Buffer>`的智能指针，来管理`ptr`。
+
+    - 支持Mock测试：如果要测试`RpcChannel`的功能，需要依赖`RpcClient::CallMethod`，而`RpcClient::CallMethod`又要依赖`RpcServer`和`RpcClientStream`，需要依赖完整的Rpc调用功能，因此为了单独测试`RpcChannel`的功能，设计了`MockTest`类，`MockTest`类为单例类，在调用`RpcChannel::CallMethod`前设置为mock调用，并注册`MockTest`的方法，那么Rpc调用将不会真正的请求服务器，而是调用`MockTest`的方法，通过构造一个虚拟的依赖项来单独测试`RpcChannel`的功能。
+
+    - 经过大量测试验证了可靠性和稳定性，在4G2核虚拟机上Qps2w+：启动脚本文件，在脚本文件中启动3个客户端程序，客户端关闭TCP的Nagle算法，客户端每次发送1字节的数据并设置为异步调用，服务器收到1字节的数据后，回复同样的数据并将成功次数加1，统计1秒内的调用成功数作为QPS，然后统计平均的QPS。
 
 3. 收获
     1. 学习到了Rpc调用的流程，对boost::protobuf能够进行基本的使用
