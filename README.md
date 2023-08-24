@@ -5,7 +5,7 @@
 
     - 支持同步和异步调用：在rpc调用前设置回调函数`done`即为异步调用，`done`为null即为同步调用，同步调用在调用结果返回前，将阻塞在`RpcChannle::CallMethod`，异步调用将`done`加入回调函数线程组异步执行。
 
-    - 支持解析自定义协议和http协议：根据协议的头四个字节区分`Get`,`Post`,自定义协议，然后调用对应的方法进行解析。HTTP解析状态机，自定义协议解析先获取协议头部，再根据头部的`meta_size`和`data_size`解析meta信息和data信息。
+    - 支持解析自定义协议和http协议：根据协议的头四个字节区分`Get`,`Post`,自定义协议，然后调用对应的方法进行解析。如何区分发送Http请求和自定义协议请求：Http客户端发送Http请求(通过curl发送post或get请求)，自定义协议客户端发送自定义协议请求。通过Http的content-length和状态机进行解析。请求行、请求头部、空行、请求内容四个部分。自定义协议先接收头部，头部字段16个字节，再根据`meta_size`和`data_size`解析meta信息和data信息。详见parser.md文件
 
     - 支持超时管理灵活控制请求时间：在Rpc调用前设置`RpcController`的超时时间，如果设置了超时时间将`RpcController`加入超时管理类，超时管理类里面维护了一个`Item`结构体的小根堆
     ```
@@ -251,29 +251,22 @@ message RpcMeta{
 
     // message sequence id
     required uint64 sequence_id = 2;
-    // -------------common part
 
     // request part----------------
 
     // service name and method name
     optional string service = 101;
     optional string method = 102;
-
-    // Todo add timeout
-    // optional int64 server_timeout = 103;
-
-    // ----------------request part
+    optional int64 server_timeout = 103;
 
     // response part----------------
 
     // set true if the call is failed
     optional bool failed = 201;
-    
     // the error reason if the call is failed
     optional string reason = 202;
-
-    // ----------------response part
 };
+
 ```
 `RpcHeader`大小为16字节，其中`magic_str`和`magic_str_value`用来区别是http协议还是自定义协议，`meta_size`为meta数据部分的大小，`data_size`为request序列化后的大小，`message_size`为meta部分和data部分的大小。
 ![](./docs/1.jpg)
